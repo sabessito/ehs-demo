@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="'Pretendard',-apple-system,'Segoe UI',sans-serif">
+  <rect width="900" height="620" fill="#F6F5F1"/>
+  <text x="32" y="42" font-size="22" font-weight="700" fill="#0E2A38">데이터 아키텍처 — 원본에서 최종 데이터셋까지</text>
+  <text x="32" y="66" font-size="13" fill="#6B6A63">공식 통계(파랑) + 내부 가상값(주황) → 가공 → 앱 탑재 DATASETS</text>
+
+  <!-- Column headers -->
+  <text x="120" y="108" font-size="13" font-weight="700" fill="#16435A" text-anchor="middle">① 원본 (Raw)</text>
+  <text x="370" y="108" font-size="13" font-weight="700" fill="#16435A" text-anchor="middle">② 가공 (Transform)</text>
+  <text x="640" y="108" font-size="13" font-weight="700" fill="#16435A" text-anchor="middle">③ 산출 (Derive)</text>
+  <text x="830" y="108" font-size="13" font-weight="700" fill="#16435A" text-anchor="middle">④ 최종</text>
+
+  <!-- RAW boxes -->
+  <g>
+    <rect x="24" y="124" width="192" height="40" rx="8" fill="#E6F1FB" stroke="#85B7EB"/>
+    <text x="34" y="142" font-size="11.5" font-weight="600" fill="#042C53">KR-1 고용부 2024 현황</text>
+    <text x="34" y="157" font-size="10" fill="#345">재해유형 비중(떨어짐 33.6%…)</text>
+
+    <rect x="24" y="172" width="192" height="40" rx="8" fill="#E6F1FB" stroke="#85B7EB"/>
+    <text x="34" y="190" font-size="11.5" font-weight="600" fill="#042C53">KR-2 2023 현황분석</text>
+    <text x="34" y="205" font-size="10" fill="#345">재해자13.7만·사망2,016</text>
+
+    <rect x="24" y="220" width="192" height="40" rx="8" fill="#E6F1FB" stroke="#85B7EB"/>
+    <text x="34" y="238" font-size="11.5" font-weight="600" fill="#042C53">US-1/2 BLS CFOI 2023</text>
+    <text x="34" y="253" font-size="10" fill="#345">운수36.8%·낙상·폭력 등</text>
+
+    <rect x="24" y="268" width="192" height="40" rx="8" fill="#E6F1FB" stroke="#85B7EB"/>
+    <text x="34" y="286" font-size="11.5" font-weight="600" fill="#042C53">US-3 / 중대재해법·OSHA</text>
+    <text x="34" y="301" font-size="10" fill="#345">법규 매핑 조항</text>
+
+    <rect x="24" y="328" width="192" height="58" rx="8" fill="#FAEEDA" stroke="#EF9F27"/>
+    <text x="34" y="347" font-size="11.5" font-weight="600" fill="#412402">IN-1/2/3 내부 가상값</text>
+    <text x="34" y="362" font-size="10" fill="#5a3a10">Cost·Event가중·Limit</text>
+    <text x="34" y="377" font-size="10" fill="#5a3a10">(영업비밀 성격 → 가상)</text>
+  </g>
+
+  <!-- TRANSFORM boxes -->
+  <g>
+    <rect x="280" y="150" width="180" height="46" rx="8" fill="#fff" stroke="#B4B2A9"/>
+    <text x="290" y="170" font-size="11.5" font-weight="600" fill="#1B1B18">STEP1 정규화</text>
+    <text x="290" y="186" font-size="10" fill="#555">비중% → 기준위험도(0~70)</text>
+
+    <rect x="280" y="206" width="180" height="46" rx="8" fill="#fff" stroke="#B4B2A9"/>
+    <text x="290" y="226" font-size="11.5" font-weight="600" fill="#1B1B18">STEP2 구역 매핑</text>
+    <text x="290" y="242" font-size="10" fill="#555">유형 → 물리적 구역 배정</text>
+
+    <rect x="280" y="300" width="180" height="46" rx="8" fill="#fff" stroke="#B4B2A9"/>
+    <text x="290" y="320" font-size="11.5" font-weight="600" fill="#1B1B18">STEP3 Risk Index</text>
+    <text x="290" y="336" font-size="10" fill="#555">Master + Event = 0~100</text>
+  </g>
+
+  <!-- DERIVE boxes -->
+  <g>
+    <rect x="556" y="206" width="170" height="46" rx="8" fill="#EEEDFE" stroke="#AFA9EC"/>
+    <text x="566" y="226" font-size="11.5" font-weight="600" fill="#26215C">Risk Index 지수</text>
+    <text x="566" y="242" font-size="10" fill="#443">구역별 종합 위험도</text>
+
+    <rect x="556" y="300" width="170" height="56" rx="8" fill="#FAECE7" stroke="#F0997B"/>
+    <text x="566" y="320" font-size="11.5" font-weight="600" fill="#4A1B0C">ALARP / Limit</text>
+    <text x="566" y="335" font-size="10" fill="#632">Cost×Index 좌표 + 법적선</text>
+    <text x="566" y="349" font-size="10" fill="#632">Effective Limit 도출</text>
+
+    <rect x="556" y="372" width="170" height="46" rx="8" fill="#fff" stroke="#B4B2A9"/>
+    <text x="566" y="392" font-size="11.5" font-weight="600" fill="#1B1B18">이슈·과제·로드맵</text>
+    <text x="566" y="408" font-size="10" fill="#555">법규 매핑 → 우선순위</text>
+  </g>
+
+  <!-- FINAL -->
+  <rect x="772" y="210" width="104" height="200" rx="10" fill="#0E2A38"/>
+  <text x="824" y="240" font-size="13" font-weight="700" fill="#9FCBB8" text-anchor="middle">DATASETS</text>
+  <text x="824" y="266" font-size="10.5" fill="#fff" text-anchor="middle">bigPicture</text>
+  <text x="824" y="288" font-size="10.5" fill="#fff" text-anchor="middle">hazardShare</text>
+  <text x="824" y="310" font-size="10.5" fill="#fff" text-anchor="middle">cost</text>
+  <text x="824" y="332" font-size="10.5" fill="#fff" text-anchor="middle">riskIndex</text>
+  <text x="824" y="354" font-size="10.5" fill="#fff" text-anchor="middle">alarp</text>
+  <text x="824" y="376" font-size="10.5" fill="#fff" text-anchor="middle">issues</text>
+  <text x="824" y="398" font-size="9.5" fill="#9FCBB8" text-anchor="middle">×(korea/overseas)</text>
+
+  <!-- Arrows -->
+  <g stroke="#16435A" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+    <path d="M216 144 L278 168"/>
+    <path d="M216 192 L278 224"/>
+    <path d="M216 240 L278 320"/>
+    <path d="M216 348 L554 326"/>
+    <path d="M460 172 L554 224"/>
+    <path d="M460 322 L554 322"/>
+    <path d="M726 228 L770 280"/>
+    <path d="M726 328 L770 320"/>
+    <path d="M726 394 L770 360"/>
+  </g>
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#16435A"/>
+    </marker>
+  </defs>
+
+  <!-- Legend -->
+  <g>
+    <rect x="24" y="430" width="14" height="14" rx="3" fill="#E6F1FB" stroke="#85B7EB"/>
+    <text x="44" y="442" font-size="11" fill="#333">공식 통계 (출처 명시)</text>
+    <rect x="200" y="430" width="14" height="14" rx="3" fill="#FAEEDA" stroke="#EF9F27"/>
+    <text x="220" y="442" font-size="11" fill="#333">내부 가상값 (시연용)</text>
+  </g>
+  <text x="24" y="480" font-size="11" fill="#6B6A63">핵심 메시지: 공개 가능한 분포·규모는 정부 통계를 그대로, 운영 비용·기준선만 가상으로 —</text>
+  <text x="24" y="498" font-size="11" fill="#6B6A63">"공개 데이터와 영업비밀을 구분해 설계할 줄 안다"는 점을 데이터 계보로 증명.</text>
+</svg>

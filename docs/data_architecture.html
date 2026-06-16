@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>데이터 아키텍처 — 클릭하여 샘플 보기</title>
+<style>
+  :root{
+    --navy:#0E2A38; --navy2:#16435A; --teal:#1D9E75; --bg:#F6F5F1;
+    --line:#E2E0D8; --muted:#6B6A63; --blue-bg:#E6F1FB; --blue-bd:#85B7EB; --blue-fg:#042C53;
+    --amber-bg:#FAEEDA; --amber-bd:#EF9F27; --amber-fg:#412402;
+    --purple-bg:#EEEDFE; --purple-bd:#AFA9EC; --purple-fg:#26215C;
+    --coral-bg:#FAECE7; --coral-bd:#F0997B; --coral-fg:#4A1B0C;
+    --gray-bg:#F1EFE8; --gray-bd:#B4B2A9;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1B1B18;}
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 60px;}
+  header h1{font-size:20px;font-weight:700;color:var(--navy);margin:0 0 4px;}
+  header p{font-size:12.5px;color:var(--muted);margin:0 0 4px;line-height:1.6;}
+  .hint{font-size:11.5px;color:var(--teal);font-weight:600;margin:8px 0 16px;}
+  .stage-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--navy2);
+    text-transform:uppercase;margin:18px 0 8px;}
+  .node{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    margin-bottom:8px;cursor:pointer;transition:transform .08s, box-shadow .15s;font:inherit;}
+  .node:active{transform:scale(.99);}
+  .node.open{box-shadow:0 4px 14px rgba(14,42,56,.12);}
+  .dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .blue{background:var(--blue-bg);border-color:var(--blue-bd);} .blue .dot{background:var(--blue-bd);}
+  .amber{background:var(--amber-bg);border-color:var(--amber-bd);} .amber .dot{background:var(--amber-bd);}
+  .purple{background:var(--purple-bg);border-color:var(--purple-bd);} .purple .dot{background:var(--purple-bd);}
+  .coral{background:var(--coral-bg);border-color:var(--coral-bd);} .coral .dot{background:var(--coral-bd);}
+  .gray{background:var(--gray-bg);border-color:var(--gray-bd);} .gray .dot{background:var(--gray-bd);}
+  .node .t{flex:1;}
+  .node .t b{font-size:13.5px;display:block;}
+  .node .t span{font-size:11px;color:var(--muted);}
+  .chev{font-size:13px;color:var(--muted);transition:transform .15s;}
+  .node.open .chev{transform:rotate(90deg);}
+  .panel{display:none;background:#fff;border:1px solid var(--line);border-top:none;
+    border-radius:0 0 12px 12px;margin:-8px 0 10px;padding:12px 14px;overflow-x:auto;}
+  .panel.open{display:block;}
+  .panel .src{font-size:11px;color:var(--muted);margin:0 0 8px;}
+  table{border-collapse:collapse;width:100%;font-size:11.5px;}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;white-space:nowrap;}
+  th{background:#F1EFE8;font-weight:600;}
+  .arrow{text-align:center;color:var(--navy2);font-size:16px;margin:2px 0;}
+  .final{background:var(--navy);border-radius:14px;padding:16px;margin-top:18px;color:#fff;}
+  .final h3{margin:0 0 10px;font-size:14px;color:#9FCBB8;}
+  .final code{display:block;font-size:11px;line-height:1.7;color:#CFE9DE;white-space:pre;font-family:ui-monospace,Menlo,monospace;}
+  .legend{display:flex;gap:14px;margin:14px 0 0;font-size:11px;color:var(--muted);}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:14px;
+    background:#E1F5EE;color:#04342C;border-radius:10px;padding:10px 12px;}
+  code.inline{background:#F1EFE8;padding:1px 5px;border-radius:4px;font-size:11px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>데이터 아키텍처</h1>
+    <p>원본의 최소 단위는 <b>재해자/사건 레코드</b>입니다. 이를 집계(GROUP BY)해 비중%이 나오고,
+       그 비중이 가공·산출을 거쳐 앱의 최종 데이터셋이 됩니다.</p>
+    <p class="hint">▸ 각 항목을 탭하면 실제 데이터셋 샘플이 펼쳐집니다 (레코드 → 집계 → 비중 순서)</p>
+  </header>
+
+  <!-- ① RAW -->
+  <div class="stage-label">① 원본 (Raw — 최소 단위 = 재해자/사건 레코드)</div>
+
+  <button class="node blue" data-target="kr0">
+    <span class="dot"></span>
+    <span class="t"><b>KR-0 · KOSHA 마이크로데이터 (138,812행)</b><span>재해자 1명 = 1행 (진짜 최소 단위)</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="kr0">
+    <p class="src">출처: 공공데이터포털 「KOSHA 산업재해통계 마이크로데이터 2017~2023」 · 단위: 건(레코드) · 전체 138,812행</p>
+    <table>
+      <tr><th>재해자ID</th><th>발생형태</th><th>대업종</th><th>규모</th><th>재해정도</th><th>연령</th><th>지역</th></tr>
+      <tr><td>2023-0001</td><td>떨어짐</td><td>건설업</td><td>5~49인</td><td>사망</td><td>58</td><td>경기</td></tr>
+      <tr><td>2023-0002</td><td>끼임</td><td>제조업</td><td>50~99인</td><td>요양4일+</td><td>41</td><td>경남</td></tr>
+      <tr><td>2023-0003</td><td>부딪힘</td><td>운수창고</td><td>5인미만</td><td>요양4일+</td><td>33</td><td>인천</td></tr>
+      <tr><td>2023-0004</td><td>떨어짐</td><td>제조업</td><td>100~299인</td><td>장해</td><td>49</td><td>충북</td></tr>
+      <tr><td>2023-0005</td><td>화재·폭발</td><td>제조업</td><td>5~49인</td><td>사망</td><td>52</td><td>경기</td></tr>
+      <tr><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+      <tr><td>2023-N</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+    </table>
+    <p class="src" style="margin-top:8px">※ 실제 컬럼: 재해자구분·발생형태·대/중업종·규모·성별·연령대·근무기간·재해정도·지역 등. 사람/사건 단위라 여기서 GROUP BY로 집계해야 비중이 나온다.</p>
+  </div>
+
+  <button class="node blue" data-target="kr0b">
+    <span class="dot"></span>
+    <span class="t"><b>KR-0b · 재해사례/사고사망 게시판 API</b><span>사건(사례) 1건 = 1레코드</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="kr0b">
+    <p class="src">출처: 공공데이터포털 「KOSHA 국내재해사례·사고사망 게시판 조회 오픈 API」 · 사건 단위 서술 레코드</p>
+    <table>
+      <tr><th>사례번호</th><th>발생일</th><th>업종</th><th>사고개요(요약)</th><th>발생형태</th></tr>
+      <tr><td>C-23-1187</td><td>2023-05-12</td><td>제조</td><td>프레스 금형 교체 중 끼임</td><td>끼임</td></tr>
+      <tr><td>C-23-1188</td><td>2023-05-19</td><td>건설</td><td>비계 단부 추락(약 6m)</td><td>떨어짐</td></tr>
+      <tr><td>C-23-1190</td><td>2023-06-02</td><td>제조</td><td>지게차 후진 중 보행자 충돌</td><td>부딪힘</td></tr>
+    </table>
+    <p class="src" style="margin-top:8px">→ 이 사건 텍스트가 "Event 로그" 오브젝트의 현실 모델. 사건번호가 최소 단위.</p>
+  </div>
+
+  <button class="node gray" data-target="agg">
+    <span class="dot"></span>
+    <span class="t"><b>STEP0 · 집계 (GROUP BY 발생형태)</b><span>레코드 → 유형별 건수 → 비중%</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="agg">
+    <p class="src">KR-0의 13.8만 레코드를 발생형태로 GROUP BY → COUNT → 비중 산출. (사고사망 기준 예시)</p>
+    <table>
+      <tr><th>발생형태</th><th>COUNT(건)</th><th>비중(%)</th></tr>
+      <tr><td>떨어짐</td><td>(Σ 사망레코드)</td><td>33.6</td></tr>
+      <tr><td>끼임</td><td>…</td><td>12.8</td></tr>
+      <tr><td>부딪힘</td><td>…</td><td>7.5</td></tr>
+      <tr><td>깔림·뒤집힘</td><td>…</td><td>6.8</td></tr>
+      <tr><td>물체에 맞음</td><td>…</td><td>6.2</td></tr>
+      <tr><td>화재·폭발·파열</td><td>…</td><td>4.5</td></tr>
+    </table>
+    <p class="src" style="margin-top:8px">SQL 개념: <code class="inline">SELECT 발생형태, COUNT(*) , COUNT(*)*100.0/SUM 비중 FROM 재해레코드 WHERE 재해정도='사망' GROUP BY 발생형태</code></p>
+  </div>
+
+  <button class="node blue" data-target="kr1">
+    <span class="dot"></span>
+    <span class="t"><b>KR-1 · 집계 결과 = 재해유형 비중</b><span>STEP0의 산출물 (공표 통계)</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="kr1">
+    <p class="src">위 집계의 결과 = 고용노동부 「2024 산업재해현황」 공표 비중. (raw가 아니라 파생물)</p>
+    <table>
+      <tr><th>재해유형</th><th>비중(%)</th></tr>
+      <tr><td>떨어짐</td><td>33.6</td></tr>
+      <tr><td>끼임</td><td>12.8</td></tr>
+      <tr><td>부딪힘</td><td>7.5</td></tr>
+      <tr><td>깔림·뒤집힘</td><td>6.8</td></tr>
+      <tr><td>물체에 맞음</td><td>6.2</td></tr>
+      <tr><td>화재·폭발·파열</td><td>4.5</td></tr>
+    </table>
+  </div>
+
+  <button class="node blue" data-target="kr2">
+    <span class="dot"></span>
+    <span class="t"><b>KR-2 · 2023 산업재해 현황분석</b><span>전체 규모 (공식)</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="kr2">
+    <p class="src">출처: 고용노동부 2023 현황분석 (산재보상 승인 기준)</p>
+    <table>
+      <tr><th>지표</th><th>값(명)</th></tr>
+      <tr><td>재해자수 (사고+질병)</td><td>136,796</td></tr>
+      <tr><td>전체 사망자수</td><td>2,016</td></tr>
+      <tr><td>업무상 사고사망자</td><td>812</td></tr>
+    </table>
+  </div>
+
+  <button class="node blue" data-target="us">
+    <span class="dot"></span>
+    <span class="t"><b>US-1/2 · 美 BLS CFOI 2023</b><span>치명재해 event 분포 (공식)</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="us">
+    <p class="src">출처: U.S. BLS CFOI 2023. 원자료는 사망사건 1건=1레코드(case-level)이며, 아래는 event별로 집계한 결과(총 5,283건).</p>
+    <table>
+      <tr><th>유형(event)</th><th>건수</th><th>비중(%)</th></tr>
+      <tr><td>운수사고</td><td>1,942</td><td>36.8</td></tr>
+      <tr><td>떨어짐·미끄러짐</td><td>885</td><td>16.8</td></tr>
+      <tr><td>유해물질 노출</td><td>820</td><td>15.5</td></tr>
+      <tr><td>폭력·가해행위</td><td>740</td><td>14.0</td></tr>
+      <tr><td>장비·물체 접촉</td><td>≈580</td><td>11.0</td></tr>
+      <tr><td>화재·폭발</td><td>104</td><td>2.0</td></tr>
+    </table>
+  </div>
+
+  <button class="node amber" data-target="in">
+    <span class="dot"></span>
+    <span class="t"><b>IN-1/2/3 · 내부 가상값</b><span>Cost·Event가중·Limit (시연용)</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="in">
+    <p class="src">사업장 운영 데이터 성격(영업비밀) → 시연용 가상값. 한국 케이스 예시.</p>
+    <table>
+      <tr><th>구역</th><th>Cost(만원)</th><th>Event가중</th></tr>
+      <tr><td>고소작업장</td><td>8,500</td><td>30</td></tr>
+      <tr><td>프레스라인</td><td>4,200</td><td>13</td></tr>
+      <tr><td>물류·지게차</td><td>3,000</td><td>10</td></tr>
+      <tr><td>중량물 야적장</td><td>1,500</td><td>7</td></tr>
+      <tr><td>자재 적치구역</td><td>1,800</td><td>4</td></tr>
+      <tr><td>도장·건조로</td><td>1,200</td><td>3</td></tr>
+    </table>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <!-- ② TRANSFORM -->
+  <div class="stage-label">② 가공 (Transform)</div>
+
+  <button class="node gray" data-target="t1">
+    <span class="dot"></span>
+    <span class="t"><b>STEP1 · 정규화</b><span>비중% → 기준위험도(0~70)</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="t1">
+    <p class="src">재해유형 비중을 0~70 스케일로 환산 → Hazard Master. (한국 예시)</p>
+    <table>
+      <tr><th>유형</th><th>비중(%)</th><th>→ Master</th></tr>
+      <tr><td>떨어짐</td><td>33.6</td><td>70</td></tr>
+      <tr><td>끼임</td><td>12.8</td><td>40</td></tr>
+      <tr><td>깔림·뒤집힘</td><td>6.8</td><td>38</td></tr>
+      <tr><td>부딪힘</td><td>7.5</td><td>35</td></tr>
+      <tr><td>물체에 맞음</td><td>6.2</td><td>30</td></tr>
+      <tr><td>화재·폭발</td><td>4.5</td><td>18</td></tr>
+    </table>
+  </div>
+
+  <button class="node gray" data-target="t2">
+    <span class="dot"></span>
+    <span class="t"><b>STEP2 · 구역 매핑</b><span>유형 → 물리적 구역 배정</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="t2">
+    <p class="src">전국 재해유형을 사업장 구역에 1:1 배정.</p>
+    <table>
+      <tr><th>재해유형</th><th>매핑 구역</th></tr>
+      <tr><td>떨어짐</td><td>고소작업장</td></tr>
+      <tr><td>끼임</td><td>프레스라인</td></tr>
+      <tr><td>부딪힘</td><td>물류·지게차</td></tr>
+      <tr><td>깔림·뒤집힘</td><td>중량물 야적장</td></tr>
+      <tr><td>물체에 맞음</td><td>자재 적치구역</td></tr>
+      <tr><td>화재·폭발</td><td>도장·건조로</td></tr>
+    </table>
+  </div>
+
+  <button class="node gray" data-target="t3">
+    <span class="dot"></span>
+    <span class="t"><b>STEP3 · Risk Index 산출</b><span>Master + Event = 0~100</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="t3">
+    <p class="src">Risk Index = Hazard Master(STEP1) + Event 가중(IN-2)</p>
+    <table>
+      <tr><th>구역</th><th>Master</th><th>Event</th><th>= Index</th></tr>
+      <tr><td>고소작업장</td><td>70</td><td>30</td><td>100</td></tr>
+      <tr><td>프레스라인</td><td>40</td><td>13</td><td>53</td></tr>
+      <tr><td>물류·지게차</td><td>35</td><td>10</td><td>45</td></tr>
+      <tr><td>중량물 야적장</td><td>38</td><td>7</td><td>45</td></tr>
+      <tr><td>자재 적치구역</td><td>30</td><td>4</td><td>34</td></tr>
+      <tr><td>도장·건조로</td><td>18</td><td>3</td><td>21</td></tr>
+    </table>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <!-- ③ DERIVE -->
+  <div class="stage-label">③ 산출 (Derive)</div>
+
+  <button class="node coral" data-target="d1">
+    <span class="dot"></span>
+    <span class="t"><b>ALARP / Limit</b><span>Cost × Index 좌표 + 법적선</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="d1">
+    <p class="src">x=Cost, y=Risk Index. 영역: Unacceptable(75↑)/ALARP(30~75)/Acceptable(30↓). 법적 최소선 Index 40.</p>
+    <table>
+      <tr><th>구역</th><th>Cost</th><th>Index</th><th>판정</th></tr>
+      <tr><td>고소작업장</td><td>8,500</td><td>100</td><td>Unacceptable</td></tr>
+      <tr><td>프레스라인</td><td>4,200</td><td>53</td><td>ALARP(법적선↑)</td></tr>
+      <tr><td>물류·지게차</td><td>3,000</td><td>45</td><td>ALARP(법적선↑)</td></tr>
+      <tr><td>중량물 야적장</td><td>1,500</td><td>45</td><td>ALARP(법적선↑)</td></tr>
+      <tr><td>자재 적치구역</td><td>1,800</td><td>34</td><td>ALARP(법적선↓)</td></tr>
+      <tr><td>도장·건조로</td><td>1,200</td><td>21</td><td>Acceptable*</td></tr>
+    </table>
+    <p class="src" style="margin-top:8px">* 도장·건조로는 지수상 낮으나 화재·폭발 심각도 특이점으로 별도 관리.</p>
+  </div>
+
+  <button class="node coral" data-target="d2">
+    <span class="dot"></span>
+    <span class="t"><b>이슈 · 과제 · 로드맵</b><span>법규 매핑 → 우선순위</span></span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="panel" id="d2">
+    <p class="src">Risk Index 상위 + 법규 매핑 → 이슈 → ROI/시급성 → 과제 → 로드맵</p>
+    <table>
+      <tr><th>이슈</th><th>법규 매핑</th></tr>
+      <tr><td>고소작업장 떨어짐 (Cost 최다·Unacceptable)</td><td>중대재해법 §4 위험성평가</td></tr>
+      <tr><td>도장·건조로 화재·폭발 (저빈도·고심각도)</td><td>§4-1-3 유해위험요인 개선</td></tr>
+      <tr><td>Hazard·Event·점검 데이터 분리</td><td>§4-1-2 관리체계 구축</td></tr>
+      <tr><td>ALARP 기준 부재 (투자 비효율)</td><td>§4-1-4 재발방지</td></tr>
+    </table>
+  </div>
+
+  <!-- ④ FINAL -->
+  <div class="final">
+    <h3>④ 최종 — 앱 탑재 DATASETS</h3>
+    <code>DATASETS
+ ├─ korea
+ │   ├─ bigPicture   ← KR-2
+ │   ├─ hazardShare  ← KR-1
+ │   ├─ cost         ← IN-1 (가상)
+ │   ├─ riskIndex    ← KR-1 + IN-2
+ │   ├─ alarp        ← cost × index
+ │   └─ issues       ← 중대재해법
+ └─ overseas
+     ├─ bigPicture   ← US-1
+     ├─ hazardShare  ← US-2
+     ├─ cost/riskIndex/alarp
+     └─ issues       ← OSHA</code>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--blue-bg);border:1px solid var(--blue-bd)"></i>공식 통계</span>
+    <span><i style="background:var(--amber-bg);border:1px solid var(--amber-bd)"></i>내부 가상값</span>
+  </div>
+
+  <div class="note">
+    핵심: 공개 가능한 분포·규모는 정부 통계 그대로, 운영 비용·기준선만 가상으로 —
+    "공개 데이터와 영업비밀을 구분해 설계할 줄 안다"는 점을 데이터 계보로 증명.
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.node').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var panel = document.getElementById(btn.dataset.target);
+      var isOpen = panel.classList.contains('open');
+      // close others
+      document.querySelectorAll('.panel.open').forEach(function(p){p.classList.remove('open');});
+      document.querySelectorAll('.node.open').forEach(function(n){n.classList.remove('open');});
+      if(!isOpen){ panel.classList.add('open'); btn.classList.add('open'); }
+    });
+  });
+</script>
+</body>
+</html>
