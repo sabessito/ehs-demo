@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Cell
 } from "recharts";
 import {
-  AlertTriangle, Database, Search, Target, Map, ChevronRight, ChevronLeft,
+  AlertTriangle, Database, Search, Target, Map,
   Activity, ShieldCheck, TrendingUp, FileText, Layers, ArrowRight, CheckCircle2,
-  GitBranch, QrCode, ExternalLink, Smartphone
+  GitBranch, QrCode, ExternalLink, Smartphone, Home, Compass, BarChart3
 } from "lucide-react";
 
 // ------------------------------------------------------------
@@ -305,17 +305,118 @@ const colorMap = {
 };
 
 const STAGES = [
+  { key: "intro", label: "소개", icon: Home },
   { key: "data", label: "데이터 분석", icon: Database },
   { key: "issue", label: "위험 인사이트", icon: AlertTriangle },
   { key: "strategy", label: "전략 방향", icon: Target },
   { key: "initiative", label: "핵심 과제", icon: Layers },
   { key: "roadmap", label: "추진 로드맵", icon: Map },
-  { key: "architecture", label: "데이터 아키텍처", icon: GitBranch },
+  { key: "detail", label: "데이터 상세", icon: GitBranch },
   { key: "qr", label: "접속·QR", icon: QrCode },
 ];
 
 const APP_URL = "https://sabessito.github.io/ehs-demo/";
 const ARCH_URL = "https://sabessito.github.io/ehs-demo/docs/data_architecture.html";
+
+// ------------------------------------------------------------
+// Glossary — 전문용어/줄임말/수식 풀이 (탭하면 설명 표시)
+// ------------------------------------------------------------
+const GLOSSARY = {
+  "ALARP": "As Low As Reasonably Practicable. 위험을 '합리적으로 실행 가능한 수준까지' 낮추는 원칙. 추가 투자비가 위험감소 효과에 비해 과도하게 불균형하지 않은 한 줄여야 함.",
+  "VPF": "Value of Preventing a Fatality. 통계적 사망 1건을 예방하는 화폐 가치. 위험감소 지불의사를 인구 전체로 합산해 산출(영국 약 £1~2M).",
+  "VSL": "Value of Statistical Life. 통계적 생명가치. VPF와 사실상 같은 개념으로, 비용편익분석에서 위험감소의 편익을 화폐로 환산할 때 사용.",
+  "HSE": "Health and Safety Executive. 영국 산업안전보건청. 위험 허용 기준(작업자 연 1/1,000 등)의 출처.",
+  "Near-Miss": "아차사고. 사고로 이어질 뻔했으나 실제 피해는 없었던 사건. 사고의 선행 신호로 활용.",
+  "Risk Index": "위험도 지수(0~100). 기준위험도(Hazard Master) + 발생추세 가중(Event)으로 산출하는 종합 위험 점수.",
+  "Hazard Master": "유해·위험요인 기준정보. 재해유형 분포를 0~70으로 정규화한 구역별 기준위험도.",
+  "RCA": "Root Cause Analysis. 근본원인 분석. 사건의 표면 현상이 아닌 근본 원인을 찾는 기법.",
+  "Fishbone": "특성요인도(이시카와 다이어그램). 원인을 6M 등 범주로 나눠 시각화하는 RCA 기법.",
+  "6M": "Man·Machine·Material·Method·Measurement·Environment. 근본원인을 분류하는 6개 범주.",
+  "PSM": "Process Safety Management. 공정안전관리. 유해물질 취급 공정의 안전관리 체계(美 OSHA 1910.119).",
+  "CBA": "Cost-Benefit Analysis. 비용편익분석. 대책의 비용과 위험감소 편익을 비교해 판단.",
+  "EPD": "End Point Detection. 공정 종료점 검출. 반도체 식각공정 등에서 종료 시점을 자동 감지하는 기술.",
+  "중대재해처벌법": "중대재해 발생 시 경영책임자의 안전보건 확보의무 위반을 처벌하는 법. 위험성평가·관리체계 구축 등을 요구.",
+};
+
+function Term({ children, k }) {
+  const [open, setOpen] = useState(false);
+  const key = k || (typeof children === "string" ? children : "");
+  const def = GLOSSARY[key];
+  if (!def) return <span>{children}</span>;
+  return (
+    <span style={{ position: "relative", display: "inline" }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        style={{
+          border: "none", background: "none", padding: 0, font: "inherit", cursor: "pointer",
+          color: COLORS.teal, fontWeight: 600,
+          borderBottom: `1px dotted ${COLORS.teal}`,
+        }}
+      >
+        {children}
+      </button>
+      {open && (
+        <>
+          <span onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+          <span style={{
+            position: "absolute", left: 0, top: "100%", marginTop: 6, zIndex: 41,
+            width: 240, background: COLORS.navy, color: "#EAF3EF", fontSize: 11.5, fontWeight: 400,
+            lineHeight: 1.6, padding: "10px 12px", borderRadius: 10, boxShadow: "0 6px 20px rgba(0,0,0,.25)",
+            display: "block", whiteSpace: "normal",
+          }}>
+            <b style={{ color: "#9FCBB8" }}>{key}</b><br />{def}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+// Formula popover — 수식을 탭하면 의미 표시
+function Formula({ expr, desc }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        style={{
+          border: `1px solid ${COLORS.line}`, background: "#F1EFE8", cursor: "pointer",
+          fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11.5, color: "#1B1B18",
+          padding: "2px 7px", borderRadius: 6,
+        }}
+      >
+        {expr} ⓘ
+      </button>
+      {open && (
+        <>
+          <span onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+          <span style={{
+            position: "absolute", left: 0, top: "100%", marginTop: 6, zIndex: 41, width: 250,
+            background: COLORS.navy, color: "#EAF3EF", fontSize: 11.5, lineHeight: 1.6,
+            padding: "10px 12px", borderRadius: 10, boxShadow: "0 6px 20px rgba(0,0,0,.25)", whiteSpace: "normal",
+          }}>{desc}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+// 좌우 스와이프로 페이지 이동
+function useSwipe(onLeft, onRight) {
+  const start = useRef(null);
+  return {
+    onTouchStart: (e) => { start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; },
+    onTouchEnd: (e) => {
+      if (!start.current) return;
+      const dx = e.changedTouches[0].clientX - start.current.x;
+      const dy = e.changedTouches[0].clientY - start.current.y;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) onLeft(); else onRight();
+      }
+      start.current = null;
+    },
+  };
+}
 
 // ------------------------------------------------------------
 // Shared bits
@@ -342,8 +443,6 @@ function ScreenShell({ children }) {
 }
 
 function Header({ stageIndex, setStageIndex, region, setRegion }) {
-  const stage = STAGES[stageIndex];
-  const Icon = stage.icon;
   return (
     <div
       style={{
@@ -364,105 +463,70 @@ function Header({ stageIndex, setStageIndex, region, setRegion }) {
         </div>
         <div
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 10,
-            background: "rgba(255,255,255,0.12)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            gap: 4,
+            background: "rgba(255,255,255,0.12)",
+            borderRadius: 9,
+            padding: 3,
             flexShrink: 0,
           }}
         >
-          <Icon size={20} color="#fff" />
+          {Object.values(DATASETS).map((d) => {
+            const active = region === d.key;
+            return (
+              <button
+                key={d.key}
+                onClick={() => setRegion(d.key)}
+                aria-label={d.label}
+                title={d.label}
+                style={{
+                  border: "none",
+                  borderRadius: 7,
+                  width: 34,
+                  height: 30,
+                  fontSize: 17,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                  background: active ? "#fff" : "transparent",
+                  opacity: active ? 1 : 0.55,
+                  transition: "all 0.15s",
+                }}
+              >
+                {d.flag}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Region toggle */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          marginTop: 14,
-          background: "rgba(255,255,255,0.10)",
-          borderRadius: 10,
-          padding: 3,
-        }}
-      >
-        {Object.values(DATASETS).map((d) => {
-          const active = region === d.key;
-          return (
-            <button
-              key={d.key}
-              onClick={() => setRegion(d.key)}
-              style={{
-                flex: 1,
-                border: "none",
-                borderRadius: 8,
-                padding: "7px 6px",
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                background: active ? "#fff" : "transparent",
-                color: active ? COLORS.navy : "#CFE9DE",
-                transition: "all 0.15s",
-              }}
-            >
-              {d.flag} {d.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Stage progress */}
-      <div style={{ display: "flex", gap: 4, marginTop: 14 }}>
-        {STAGES.map((s, i) => (
-          <div
-            key={s.key}
-            style={{
-              flex: 1,
-              height: 4,
-              borderRadius: 2,
-              background: i <= stageIndex ? COLORS.teal : "rgba(255,255,255,0.18)",
-              transition: "background 0.2s",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Direct tab strip (scrollable) */}
-      <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2,
+      {/* Tab-name strip (scrollable, active = bold/solid) */}
+      <div style={{ display: "flex", gap: 6, marginTop: 14, overflowX: "auto", paddingBottom: 4,
         WebkitOverflowScrolling: "touch" }}>
         {STAGES.map((s, i) => {
           const active = i === stageIndex;
           return (
             <button
               key={s.key}
+              ref={(el) => { if (el && active) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }}
               onClick={() => setStageIndex(i)}
               style={{
                 flexShrink: 0,
                 border: "none",
                 borderRadius: 8,
-                padding: "5px 10px",
-                fontSize: 11.5,
-                fontWeight: 600,
+                padding: "7px 12px",
+                fontSize: active ? 13 : 12,
+                fontWeight: active ? 700 : 500,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 background: active ? "#fff" : "rgba(255,255,255,0.10)",
-                color: active ? COLORS.navy : "#CFE9DE",
+                color: active ? COLORS.navy : "rgba(255,255,255,0.6)",
+                transition: "all 0.15s",
               }}
             >
-              {i + 1}. {s.label}
+              {s.label}
             </button>
           );
         })}
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-        <span style={{ fontSize: 12, color: "#CFE9DE" }}>
-          STEP {stageIndex + 1} / {STAGES.length}
-        </span>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{stage.label}</span>
       </div>
     </div>
   );
@@ -476,61 +540,32 @@ function Footer({ stageIndex, setStageIndex }) {
         bottom: 0,
         background: COLORS.bg,
         borderTop: `1px solid ${COLORS.line}`,
-        padding: "10px 16px 14px",
+        padding: "12px 16px 14px",
         display: "flex",
-        gap: 10,
+        gap: 6,
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <button
-        onClick={() => setStageIndex((i) => Math.max(0, i - 1))}
-        disabled={stageIndex === 0}
-        style={navBtnStyle(stageIndex === 0)}
-      >
-        <ChevronLeft size={16} /> 이전
-      </button>
-      <div style={{ flex: 1, display: "flex", gap: 4, alignItems: "center", justifyContent: "center" }}>
-        {STAGES.map((s, i) => (
-          <button
-            key={s.key}
-            onClick={() => setStageIndex(i)}
-            aria-label={s.label}
-            style={{
-              width: 9,
-              height: 9,
-              borderRadius: "50%",
-              border: "none",
-              background: i === stageIndex ? COLORS.navy : "#D5D2C7",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          />
-        ))}
-      </div>
-      <button
-        onClick={() => setStageIndex((i) => Math.min(STAGES.length - 1, i + 1))}
-        disabled={stageIndex === STAGES.length - 1}
-        style={navBtnStyle(stageIndex === STAGES.length - 1)}
-      >
-        다음 <ChevronRight size={16} />
-      </button>
+      {STAGES.map((s, i) => (
+        <button
+          key={s.key}
+          onClick={() => setStageIndex(i)}
+          aria-label={s.label}
+          style={{
+            width: i === stageIndex ? 22 : 9,
+            height: 9,
+            borderRadius: 5,
+            border: "none",
+            background: i === stageIndex ? COLORS.navy : "#D5D2C7",
+            cursor: "pointer",
+            padding: 0,
+            transition: "width .15s",
+          }}
+        />
+      ))}
     </div>
   );
-}
-
-function navBtnStyle(disabled) {
-  return {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    fontSize: 13,
-    fontWeight: 600,
-    padding: "10px 14px",
-    borderRadius: 10,
-    border: `1px solid ${COLORS.line}`,
-    background: disabled ? "#F0EEE8" : "#fff",
-    color: disabled ? "#B7B5AC" : COLORS.navy,
-    cursor: disabled ? "default" : "pointer",
-  };
 }
 
 function SectionLabel({ children }) {
@@ -562,6 +597,103 @@ function Card({ children, style }) {
       }}
     >
       {children}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Stage 0: Intro / 소개
+// ------------------------------------------------------------
+
+function FlowStep({ n, label, icon: Icon, last }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fff",
+          border: `1px solid ${COLORS.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={20} color={COLORS.navy} />
+        </div>
+        <div style={{ fontSize: 10, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.2, width: 56 }}>{label}</div>
+      </div>
+      {!last && <ArrowRight size={14} color={COLORS.line} style={{ flexShrink: 0, marginBottom: 16 }} />}
+    </div>
+  );
+}
+
+function IntroStage({ go }) {
+  const points = [
+    { icon: Database, color: "blue", title: "1. 데이터로 현황 진단",
+      body: "내부(센서·설비·장비·인사)와 외부(중대재해 법규·타사/해외 사례)를 모두 활용. 내·외부 데이터를 사건·사람·근본원인 관점으로 묶어 데이터화하고 분석합니다." },
+    { icon: Compass, color: "purple", title: "2. Top-down·Bottom-up 전략 Framework",
+      body: "Top-down은 삼성 그룹 사업 분류와 각 사업의 전략적 방향성을 기준으로, Bottom-up은 데이터 진단으로 예측되는 중대재해 분류의 영향 관계사를 묶어 구성합니다. 두 축의 교차점에서 Theme별 전략과 우선순위를 도출합니다." },
+    { icon: BarChart3, color: "coral", title: "3. 과제 기획 → 구축 → 운영",
+      body: "전략을 과제로 기획하고 로드맵으로 방향을 조망합니다. 운영 지표·재무 지표를 KPI로 관리해 각 관계사에 기획·구축까지 이어집니다." },
+  ];
+  return (
+    <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Hero */}
+      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "18px 16px", color: "#fff" }}>
+        <div style={{ fontSize: 11, letterSpacing: 1.2, color: "#9FCBB8", fontWeight: 600 }}>
+          SMART SAFETY STRATEGY · DEMO
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, marginTop: 6, lineHeight: 1.4 }}>
+          데이터로 진단하고, 전략을 세우고,<br />관계사에 기획·구축까지
+        </div>
+        <p style={{ fontSize: 12.5, color: "#CFE9DE", lineHeight: 1.7, margin: "10px 0 0" }}>
+          삼성EHS전략연구소에서 일한다면 <Term k="중대재해처벌법">중대재해</Term> 0을 향해
+          어떻게 일할지를 담은 샘플입니다. 현황 진단 → 전략 → 과제 기획 → 로드맵 → 관계사
+          기획·구축까지 <b>업무 전체 흐름</b>을 보여줍니다.
+        </p>
+      </div>
+
+      {/* Flow */}
+      <Card>
+        <SectionLabel>업무 전체 흐름</SectionLabel>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+          marginTop: 6, overflowX: "auto", paddingBottom: 4 }}>
+          <FlowStep n={1} label="데이터 진단" icon={Database} />
+          <FlowStep n={2} label="전략 방향" icon={Compass} />
+          <FlowStep n={3} label="과제 기획" icon={Layers} />
+          <FlowStep n={4} label="로드맵" icon={Map} />
+          <FlowStep n={5} label="기획·구축" icon={CheckCircle2} last />
+        </div>
+      </Card>
+
+      {/* 3 core points */}
+      {points.map((p, i) => {
+        const c = colorMap[p.color];
+        const Icon = p.icon;
+        return (
+          <Card key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: c.bg,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon size={19} color={c.fg} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#1B1B18" }}>{p.title}</div>
+              <p style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.6, margin: "5px 0 0" }}>{p.body}</p>
+            </div>
+          </Card>
+        );
+      })}
+
+      {/* How to use */}
+      <Card style={{ background: "#E1F5EE", border: "none" }}>
+        <SectionLabel>보는 방법</SectionLabel>
+        <ul style={{ margin: "4px 0 0", paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: "#04342C" }}>
+          <li>화면을 <b>좌우로 스와이프</b>하거나 상단 <b>탭 이름</b>을 눌러 이동</li>
+          <li>상단 우측 <b>국기</b>로 🇰🇷국내 / 🇺🇸해외 데이터 전환</li>
+          <li><span style={{ color: COLORS.teal, fontWeight: 600, borderBottom: `1px dotted ${COLORS.teal}` }}>밑줄 친 용어</span>나 수식을 누르면 뜻이 나옵니다</li>
+          <li>데이터 출처·계보는 <b>데이터 상세</b> 탭에서 확인</li>
+        </ul>
+      </Card>
+
+      <button onClick={() => go(1)}
+        style={{ border: "none", borderRadius: 12, padding: "14px", background: COLORS.navy, color: "#fff",
+          fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center",
+          justifyContent: "center", gap: 6 }}>
+        데이터 분석부터 시작하기 <ArrowRight size={16} />
+      </button>
     </div>
   );
 }
@@ -624,9 +756,11 @@ function DataStage({ ds }) {
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
       <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        기업은 "재해가 나지 않을 적정선" 안에서 비용을 최소화하려는 경향이 있습니다.
-        이를 데이터로 검증하기 위해 <b>① Cost(예방투자) · ② Risk Index(위험도 지수) · ③
-        Limit(운영기준선·ALARP)</b> 3가지 관점으로 분석합니다.
+        목표는 <b>중대재해 0</b>입니다. 사고는 대개 조치가 있었음에도 발생하는 것이 아니라,
+        지켜야 할 법규·기준이 누락되거나 조치 자체가 없을 때 발생합니다. 따라서 무엇을
+        놓치고 있는지 데이터로 먼저 찾아 선제적으로 개선해야 합니다. 이를 위해
+        <b>① <Term k="Risk Index">Risk Index</Term>(위험도 지수) · ② Cost(개선투자) · ③
+        Limit(운영기준선·<Term k="ALARP">ALARP</Term>)</b> 3가지 관점으로 분석합니다.
       </p>
 
       <div
@@ -643,6 +777,29 @@ function DataStage({ ds }) {
         <b>적용 법규</b> {ds.law}<br />
         <b>기준 데이터</b> {ds.source} (Cost·Limit은 내부 가상 데이터)
       </div>
+
+      {/* 내부·외부 데이터 관점 (K1) */}
+      <Card>
+        <SectionLabel>데이터 관점 — 외부 + 내부를 하나로</SectionLabel>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ flex: 1, background: "#E6F1FB", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#042C53" }}>외부 데이터</div>
+            <div style={{ fontSize: 11, color: "#345", lineHeight: 1.6, marginTop: 4 }}>
+              중대재해 법규 · 타사 사례 · 해외 사례 리서치
+            </div>
+          </div>
+          <div style={{ flex: 1, background: "#EEEDFE", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#26215C" }}>내부 데이터</div>
+            <div style={{ fontSize: 11, color: "#443", lineHeight: 1.6, marginTop: 4 }}>
+              센서 · 설비 · 장비 · 인사정보 등 수집 가능한 데이터
+            </div>
+          </div>
+        </div>
+        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
+          두 데이터를 <b>사건·사람·근본원인</b> 관점으로 묶어 데이터화합니다(계보는 '데이터 상세' 탭).
+          아래는 그 분석을 <Term k="Risk Index">Risk Index</Term>·Cost·Limit 3관점으로 본 결과입니다.
+        </p>
+      </Card>
 
       {/* 큰 그림 — 전체 규모 통계 */}
       <Card>
@@ -1001,11 +1158,65 @@ function IssueStage({ ds }) {
 // ------------------------------------------------------------
 
 function StrategyStage() {
+  const themes = [
+    { theme: "해외 신규 구축군", focus: "공사안전(추락·중장비)", members: "베트남·인도 신공장 등", color: "coral" },
+    { theme: "노후 양산설비군", focus: "협착·화재(예지보전)", members: "국내 가동 10년+ 라인", color: "amber" },
+    { theme: "신규 가동 양산군", focus: "미숙련 인력(교육·동선)", members: "신설 양산 관계사", color: "blue" },
+  ];
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
       <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        4가지 전략 축으로 재구성합니다. 각 축은 <b>위험성평가 → 사전예측 → 법규 대응 → 계열사
-        확산</b>의 흐름을 데이터 기반으로 연결합니다.
+        전략은 <b>Top-down</b>과 <b>Bottom-up</b>을 동시에 고려해 수립합니다. 하향식으로
+        그룹 차원의 방향성을 정렬하고, 상향식으로 데이터가 가리키는 실제 위험을 반영해,
+        두 축이 만나는 지점에서 Theme별 전략과 우선순위를 도출합니다.
+      </p>
+
+      <Card>
+        <SectionLabel>전략 수립 Framework — 양방향 접근</SectionLabel>
+        <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+          <div style={{ flex: 1, background: "#EEEDFE", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#26215C" }}>↓ Top-down</div>
+            <div style={{ fontSize: 11, color: "#443", lineHeight: 1.6, marginTop: 4 }}>
+              삼성 그룹 <b>사업 분류 체계</b> + 각 사업의 <b>현 전략적 방향성</b>을
+              기준으로 안전 전략의 상위 방향을 정렬
+            </div>
+          </div>
+          <div style={{ flex: 1, background: "#FAECE7", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#4A1B0C" }}>↑ Bottom-up</div>
+            <div style={{ fontSize: 11, color: "#632", lineHeight: 1.6, marginTop: 4 }}>
+              데이터 현황 진단으로 <b>예측되는 중대재해 분류</b>에 의해 영향받는
+              관계사를 식별·군집화
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", fontSize: 11.5, color: COLORS.teal, fontWeight: 700, margin: "10px 0 2px" }}>
+          ↘ 교차점 ↙ — Theme별 전략 · 투자 우선순위 도출
+        </div>
+      </Card>
+
+      <Card>
+        <SectionLabel>교차 결과 — 관계사 군집 → Theme 전략</SectionLabel>
+        {themes.map((t, i) => {
+          const c = colorMap[t.color];
+          return (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start",
+              padding: "10px 0", borderTop: i ? `1px solid ${COLORS.line}` : "none" }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: c.border, marginTop: 4, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{t.theme}</div>
+                <div style={{ fontSize: 11.5, color: c.fg, fontWeight: 600, marginTop: 1 }}>→ {t.focus}</div>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2 }}>{t.members}</div>
+              </div>
+            </div>
+          );
+        })}
+        <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
+          동일 사업 국면·중대재해 분류를 가진 관계사를 군집화하면 전략·과제를 표준화·확산하기 용이합니다.
+        </p>
+      </Card>
+
+      <p style={{ fontSize: 12.5, color: COLORS.textMuted, lineHeight: 1.6, margin: "2px 0 0" }}>
+        각 군집에 4대 공통 전략 축을 적용합니다 — <b>위험성평가 → 사전예측 → 법규 대응 → 관계사 확산</b>.
       </p>
       {strategyPillars.map((p, i) => {
         const Icon = p.icon;
@@ -1065,8 +1276,8 @@ function InitiativeStage() {
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
       <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        전략을 실행 가능한 4개 과제로 구체화하고, <b>ROI · 시급성</b> 기준으로 우선순위를
-        부여합니다.
+        전략을 실행 가능한 과제로 기획합니다. 방법론은 <b>근본원인 → 대책 → 기대효과</b>를
+        한 장으로 정의(과제기획서)하고, <b>ROI · 시급성</b> 기준으로 우선순위를 부여하는 방식입니다.
       </p>
 
       <Card>
@@ -1196,6 +1407,33 @@ function RoadmapStage() {
         </Card>
       ))}
 
+      <Card>
+        <SectionLabel>KPI — 운영 지표 · 재무 지표로 관리</SectionLabel>
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.navy2, marginBottom: 4 }}>운영 지표</div>
+            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, lineHeight: 1.7, color: "#4A4943" }}>
+              <li>중대재해 건수(목표 0)</li>
+              <li>Near-Miss→사고 전환율</li>
+              <li>근본원인 해소율(%)</li>
+              <li>법규 의무 이행률(%)</li>
+            </ul>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.navy2, marginBottom: 4 }}>재무 지표</div>
+            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, lineHeight: 1.7, color: "#4A4943" }}>
+              <li>예방투자 대비 위험감소액</li>
+              <li>사고 손실비용 절감</li>
+              <li>근본원인당 <Term k="CBA">CBA</Term> 순편익</li>
+              <li>관계사 확산 ROI</li>
+            </ul>
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
+          운영 지표로 '안전이 실제 좋아지는가'를, 재무 지표로 '투자가 합리적인가'를 동시에 관리합니다.
+        </p>
+      </Card>
+
       <Card style={{ background: "#E1F5EE", border: "none" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
           <CheckCircle2 size={18} color="#085041" style={{ flexShrink: 0, marginTop: 1 }} />
@@ -1211,31 +1449,212 @@ function RoadmapStage() {
 }
 
 // ------------------------------------------------------------
-// Stage 6: Data Architecture
+// Stage 6: Detail (Cost·Limit + 데이터 계보 통합)
+// ------------------------------------------------------------
+
+function DetailStage() {
+  const [sub, setSub] = useState("costlimit");
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 6, padding: "14px 16px 0" }}>
+        {[["costlimit", "Cost·Limit"], ["lineage", "데이터 계보"]].map(([k, label]) => {
+          const active = sub === k;
+          return (
+            <button key={k} onClick={() => setSub(k)}
+              style={{ flex: 1, border: `1px solid ${active ? COLORS.navy : COLORS.line}`,
+                borderRadius: 10, padding: "8px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                background: active ? COLORS.navy : "#fff", color: active ? "#fff" : COLORS.textMuted }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      {sub === "costlimit" ? <CostLimitStage /> : <ArchitectureStage />}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Stage 6a: Cost & Limit (정량 산출 + 현실화 로직)
+// ------------------------------------------------------------
+
+// 시연용 추정 단가표 (실제 견적 시 교체) — 단위: 만원
+const UNIT_PRICES = [
+  { item: "고정형 CCTV (AI 동선분석)", unit: 120, per: "개소" },
+  { item: "스마트 안전모 (센서·알람)", unit: 35, per: "인원" },
+  { item: "추락방지 안전난간/생명줄", unit: 8, per: "m" },
+  { item: "협착 방호 라이트커튼", unit: 90, per: "개소" },
+  { item: "가스·열 감지 IoT 센서", unit: 25, per: "개소" },
+  { item: "안전교육 VR 키트", unit: 60, per: "세트" },
+];
+
+// 근본원인별 대책 = 장비 조합 → 정량 Cost
+const COST_BREAKDOWN = [
+  { rc: "RC-01 추락방지 설계 누락", items: [
+      { name: "추락방지 안전난간/생명줄", qty: 300, unit: 8, per: "m" },
+      { name: "스마트 안전모", qty: 120, unit: 35, per: "인원" },
+      { name: "고정형 CCTV", qty: 12, unit: 120, per: "개소" },
+    ] },
+  { rc: "RC-03 협착 방호 표준 부재", items: [
+      { name: "협착 방호 라이트커튼", qty: 28, unit: 90, per: "개소" },
+      { name: "고정형 CCTV", qty: 8, unit: 120, per: "개소" },
+    ] },
+];
+
+// Limit 현실화 전략 케이스 — 6M 가중치
+const LIMIT_CASES = [
+  { id: "overseas", name: "해외 다발 구축", focus: "공사안전(추락·중장비)",
+    weights: { Man: 1.0, Machine: 1.3, Material: 1.0, Method: 1.2, Measurement: 1.0, Environment: 1.4 },
+    note: "신규 공사현장 다수 → 추락·중장비 사고 가중. 공사단계 Limit을 보수적으로." },
+  { id: "aging", name: "노후 설비 운영", focus: "협착·화재",
+    weights: { Man: 1.0, Machine: 1.5, Material: 1.2, Method: 1.1, Measurement: 1.3, Environment: 1.0 },
+    note: "설비 노후 → 협착·화재 가중. 예지보전 데이터와 연계해 Limit 동적 조정." },
+  { id: "rampup", name: "신규 양산 가동", focus: "미숙련 인력",
+    weights: { Man: 1.5, Machine: 1.1, Material: 1.0, Method: 1.3, Measurement: 1.0, Environment: 1.1 },
+    note: "신규 인력 대량 투입 → Man 리스크 가중. 교육·동선관리 Limit 강화." },
+];
+
+function fmtMan(v) { return v.toLocaleString() + "만원"; }
+
+function CostLimitStage() {
+  const [caseId, setCaseId] = useState("overseas");
+  const activeCase = LIMIT_CASES.find((c) => c.id === caseId);
+
+  return (
+    <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
+        Cost는 <b>근본원인 제거 대책을 장비 단위로 분해</b>해 정량 산출하고, Limit은
+        <b>학술 근거(<Term k="HSE">HSE</Term>·<Term k="VPF">VPF</Term>) 위에 산업·전략 특성을 반영</b>해 현실화합니다.
+      </p>
+
+      {/* COST — 정량 산출 */}
+      <Card>
+        <ObjectBadge color="blue">Cost — 근본원인별 정량 산출</ObjectBadge>
+        {COST_BREAKDOWN.map((b, bi) => {
+          const total = b.items.reduce((s, it) => s + it.qty * it.unit, 0);
+          return (
+            <div key={bi} style={{ marginTop: bi === 0 ? 6 : 14 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>{b.rc}</div>
+              <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 11 }}>
+                <tbody>
+                  <tr>
+                    {["장비/조치", "수량", "단가", "금액"].map((h, i) => (
+                      <th key={i} style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", background: "#F1EFE8", textAlign: i === 0 ? "left" : "right", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                  {b.items.map((it, ii) => (
+                    <tr key={ii}>
+                      <td style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px" }}>{it.name}</td>
+                      <td style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", textAlign: "right", whiteSpace: "nowrap" }}>{it.qty}{it.per}</td>
+                      <td style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", textAlign: "right", whiteSpace: "nowrap" }}>{it.unit}만</td>
+                      <td style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", textAlign: "right", whiteSpace: "nowrap" }}>{(it.qty * it.unit).toLocaleString()}만</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={3} style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", textAlign: "right", fontWeight: 700, background: "#E6F1FB" }}>대책 합계</td>
+                    <td style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", textAlign: "right", fontWeight: 700, background: "#E6F1FB", whiteSpace: "nowrap" }}>{total.toLocaleString()}만</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+        <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
+          단가는 시연용 추정치(실제 견적 시 교체). 산식: Σ(단가 × 수량/개소).
+        </p>
+      </Card>
+
+      {/* LIMIT — 학술 근거 */}
+      <Card>
+        <ObjectBadge color="purple">Limit — 학술적 근거</ObjectBadge>
+        <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 12.5, lineHeight: 1.7, color: "#3A3933" }}>
+          <li><b>위험 상한선(Unacceptable)</b>: 英 <Term k="HSE">HSE</Term> 최대 허용 위험 — 작업자 연 1/1,000,
+            일반인 연 1/10,000. 이 선을 넘으면 비용 불문 즉시 조치.</li>
+          <li><b><Term k="ALARP">ALARP</Term> 비용편익</b>: <Term k="VPF">VPF</Term>/<Term k="VSL">VSL</Term>(통계적 생명가치, 英 약 £1~2M) 기반 <Term k="CBA">CBA</Term>로
+            <Formula expr="순편익 = 위험감소액 − 대책비용" desc="순편익 = (예방되는 사망·부상의 VPF 환산 가치) − (대책 투자비). 양수면 투자 타당, ALARP 영역에서 판단." />를 비교.</li>
+          <li><b>실무 적용</b>: 정밀 정량분석 필수 아님 — 전문가 판단 + 조잡한 <Term k="CBA">CBA</Term>로 충분(HSE 정책).</li>
+        </ul>
+        <div style={{ background: "#FAEEDA", color: "#412402", borderRadius: 8, padding: "8px 10px", marginTop: 10, fontSize: 11, lineHeight: 1.6 }}>
+          현실화 과제: 위 기준은 영국 데이터. 한국은 VPF 합의값이 미정립 →
+          아래 전략 케이스별로 6M 가중치를 달리해 Limit을 단계적으로 현실화.
+        </div>
+      </Card>
+
+      {/* LIMIT — 전략 케이스 토글 */}
+      <Card>
+        <ObjectBadge color="coral">Limit 현실화 — 전략 케이스</ObjectBadge>
+        <div style={{ display: "flex", gap: 6, margin: "6px 0 12px", flexWrap: "wrap" }}>
+          {LIMIT_CASES.map((c) => {
+            const active = c.id === caseId;
+            return (
+              <button key={c.id} onClick={() => setCaseId(c.id)}
+                style={{ border: `1px solid ${active ? COLORS.coral : COLORS.line}`, borderRadius: 8,
+                  padding: "6px 10px", fontSize: 11.5, fontWeight: 600, cursor: "pointer",
+                  background: active ? "#FAECE7" : "#fff", color: active ? "#4A1B0C" : COLORS.textMuted }}>
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 12.5, color: "#1B1B18", fontWeight: 600 }}>
+          포커싱: {activeCase.focus}
+        </div>
+        <p style={{ fontSize: 12, color: "#4A4943", lineHeight: 1.6, margin: "4px 0 10px" }}>{activeCase.note}</p>
+        <SectionLabel>6M 가중치 (1.0 = 기본, ↑ = Limit 강화)</SectionLabel>
+        <div style={{ width: "100%", height: 180 }}>
+          <ResponsiveContainer>
+            <BarChart data={Object.entries(activeCase.weights).map(([k, v]) => ({ m: k, w: v }))}
+              margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#EEEBE3" vertical={false} />
+              <XAxis dataKey="m" tick={{ fontSize: 9.5, fill: COLORS.textMuted }} interval={0} angle={-20} textAnchor="end" height={44} />
+              <YAxis domain={[0, 1.6]} tick={{ fontSize: 10, fill: COLORS.textMuted }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => [v + "×", "가중치"]} />
+              <Bar dataKey="w" radius={[4, 4, 0, 0]}>
+                {Object.entries(activeCase.weights).map(([k, v], i) => (
+                  <Cell key={i} fill={v >= 1.3 ? COLORS.coral : v > 1.0 ? COLORS.amber : COLORS.navy2} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
+          같은 사건이라도 케이스별 가중치에 따라 근본원인의 Risk Index·Limit이 달라집니다.
+          예: 해외 다발 구축에서는 Environment·Machine 가중 → 추락·중장비 근본원인의 Limit이 보수적으로.
+        </p>
+      </Card>
+
+      <div style={{ background: "#E1F5EE", color: "#04342C", borderRadius: 10, padding: "10px 12px", fontSize: 11.5, lineHeight: 1.6 }}>
+        면접 포인트: "Limit은 고정값이 아니라 산업·사업 전략에 따라 움직이는 변수다.
+        학술 기준을 토대로, 사업 국면별 6M 가중으로 현실화하는 로직을 설계했다."
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Stage 7: Data Architecture
 // ------------------------------------------------------------
 
 const ARCH_NODES = {
   raw: [
-    { id: "KR-0", color: "blue", title: "KOSHA 마이크로데이터 (138,812행)", sub: "재해자 1명 = 1행 (진짜 최소 단위)",
-      rows: [["재해자ID","발생형태","대업종","재해정도"],["2023-0001","떨어짐","건설업","사망"],["2023-0002","끼임","제조업","요양4일+"],["2023-0005","화재·폭발","제조업","사망"]] },
-    { id: "KR-0b", color: "blue", title: "재해사례/사고사망 게시판 API", sub: "사건 1건 = 1레코드",
-      rows: [["사례번호","업종","사고개요","형태"],["C-23-1187","제조","프레스 금형 교체 중 끼임","끼임"],["C-23-1188","건설","비계 단부 추락(6m)","떨어짐"]] },
-    { id: "IN", color: "amber", title: "내부 가상값 (Cost·Event)", sub: "사업장 운영 데이터(영업비밀) → 시연용",
-      rows: [["구역","Cost(만원)","Event가중"],["고소작업장","8,500","30"],["프레스라인","4,200","13"]] },
+    { id: "RAW-1", color: "gray", title: "원본 ① KOSHA 마이크로데이터", sub: "138,812행 · 불변(절대 미수정)",
+      rows: [["재해자ID","발생형태","업종","재해정도"],["2023-0001","떨어짐","건설","사망"],["2023-0002","끼임","제조","요양"]] },
+    { id: "RAW-2", color: "gray", title: "원본 ② 사고사례 API", sub: "사건 단위 서술 · 불변",
+      rows: [["사례번호","사고개요","형태"],["C-23-1187","프레스 끼임","끼임"],["C-23-1188","비계 추락","떨어짐"]] },
+    { id: "RAW-3", color: "gray", title: "원본 ③ 美 BLS CFOI", sub: "case-level · 불변",
+      rows: [["case_id","event","연도"],["US-9001","운수","2023"],["US-9002","폭력","2023"]] },
   ],
-  transform: [
-    { id: "STEP0", color: "gray", title: "집계 (GROUP BY 발생형태)", sub: "레코드 → 유형별 건수 → 비중%",
-      rows: [["발생형태","COUNT","비중%"],["떨어짐","Σ","33.6"],["끼임","…","12.8"],["부딪힘","…","7.5"]] },
-    { id: "STEP1", color: "gray", title: "정규화", sub: "비중% → 기준위험도(0~70)",
-      rows: [["유형","비중%","→Master"],["떨어짐","33.6","70"],["끼임","12.8","40"]] },
-    { id: "STEP3", color: "gray", title: "Risk Index 산출", sub: "Master + Event = 0~100",
-      rows: [["구역","Master","Event","=Index"],["고소작업장","70","30","100"],["프레스라인","40","13","53"]] },
+  phase1: [
+    { id: "P1", color: "blue", title: "Phase 1 — 사건·사람 관점 정렬", sub: "원본 복제본을 incident/victim 축으로 정렬",
+      rows: [["incident_id","victim_id","발생형태","재해정도"],["I-2301","V-1001","끼임","사망"],["I-2301","V-1002","끼임","중상"],["I-2305","V-1003","떨어짐","사망"]] },
   ],
-  derive: [
-    { id: "ALARP", color: "coral", title: "ALARP / Limit", sub: "Cost × Index 좌표 + 법적선",
-      rows: [["구역","Cost","Index","판정"],["고소작업장","8,500","100","Unacceptable"],["도장·건조로","1,200","21","Acceptable*"]] },
-    { id: "OUT", color: "coral", title: "이슈·과제·로드맵", sub: "법규 매핑 → 우선순위",
-      rows: [["이슈","법규"],["고소작업장 떨어짐","중대재해법 §4"],["데이터 분리","§4-1-2 관리체계"]] },
+  phase2: [
+    { id: "P2", color: "purple", title: "Phase 2 — 근본원인·현상 속성 추가", sub: "사건에 현상→직접원인→근본원인(6M) 컬럼 추가",
+      rows: [["incident_id","현상","직접원인","근본원인(6M)"],["I-2301","끼임","방호 미작동","협착표준 부재(Method)"],["I-2305","떨어짐","안전대 미체결","추락설계 누락(Machine)"]] },
+  ],
+  phase3: [
+    { id: "P3", color: "coral", title: "Phase 3 — 통합(Integration)", sub: "Phase1·2 가공본 + 내부 Cost/Event 통합 → 분석 기반",
+      rows: [["root_cause_id","연결사건","피해자","Cost(만원)","Index"],["RC-01","8","9","8,500","100"],["RC-03","12","13","4,200","53"]] },
   ],
 };
 
@@ -1285,16 +1704,26 @@ function ArchitectureStage() {
   const [open, setOpen] = useState(null);
   const toggle = (id) => setOpen(open === id ? null : id);
   const groups = [
-    { label: "① 원본 (Raw — 최소단위 = 재해자/사건 레코드)", items: ARCH_NODES.raw },
-    { label: "② 가공 (Transform)", items: ARCH_NODES.transform },
-    { label: "③ 산출 (Derive)", items: ARCH_NODES.derive },
+    { label: "원본 (Raw) — 절대 수정하지 않음 · 불변", items: ARCH_NODES.raw },
+    { label: "Phase 1 — 사건·사람 관점 정렬", items: ARCH_NODES.phase1 },
+    { label: "Phase 2 — 근본원인·현상 속성 추가", items: ARCH_NODES.phase2 },
+    { label: "Phase 3 — 통합(Integration)", items: ARCH_NODES.phase3 },
   ];
   return (
     <div style={{ padding: "16px 16px 8px" }}>
       <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: "0 0 6px" }}>
-        원본의 최소 단위는 <b>재해자/사건 레코드</b>입니다. 집계(GROUP BY)해야 비중%이 나오고,
-        그것이 가공·산출을 거쳐 앱의 최종 데이터셋이 됩니다.
+        <b>원본은 절대 수정하지 않습니다.</b> 원본을 복제해 ① 사건·사람 관점으로 정렬(Phase 1),
+        ② <Term k="RCA">근본원인</Term>·현상 속성 추가(Phase 2), ③ 통합(Phase 3)의 단계로만
+        가공합니다.
       </p>
+
+      <div style={{ background: COLORS.navy, borderRadius: 12, padding: "12px 14px", margin: "10px 0 14px" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#9FCBB8", marginBottom: 8, letterSpacing: .5 }}>KEY 계층</div>
+        <pre style={{ margin: 0, fontSize: 11, lineHeight: 1.7, color: "#CFE9DE", fontFamily: "ui-monospace,Menlo,monospace", whiteSpace: "pre-wrap" }}>{`root_cause_id   (근본원인 1)
+   └─ incident_id   (사건 N)
+        └─ victim_id   (피해자 M, 보상 단위)`}</pre>
+      </div>
+
       <p style={{ fontSize: 11.5, color: COLORS.teal, fontWeight: 600, margin: "0 0 14px" }}>
         ▸ 각 항목을 탭하면 실제 데이터셋 샘플이 펼쳐집니다
       </p>
@@ -1307,32 +1736,21 @@ function ArchitectureStage() {
             <ArchNode key={n.id} node={n} open={open === n.id} onToggle={() => toggle(n.id)} />
           ))}
           {gi < groups.length - 1 && (
-            <div style={{ textAlign: "center", color: COLORS.navy2, fontSize: 16, margin: "2px 0" }}>↓</div>
+            <div style={{ textAlign: "center", color: COLORS.navy2, fontSize: 16, margin: "2px 0" }}>↓ (원본 복제 → 가공)</div>
           )}
         </div>
       ))}
 
-      <div style={{ background: COLORS.navy, borderRadius: 14, padding: 16, marginTop: 18 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#9FCBB8", marginBottom: 10 }}>④ 최종 — 앱 탑재 DATASETS</div>
-        <pre style={{ margin: 0, fontSize: 10.5, lineHeight: 1.7, color: "#CFE9DE", fontFamily: "ui-monospace,Menlo,monospace", whiteSpace: "pre" }}>{`DATASETS
- ├─ korea
- │   ├─ bigPicture  ← KR-2
- │   ├─ hazardShare ← KR-1
- │   ├─ cost        ← IN (가상)
- │   ├─ riskIndex   ← KR-1 + IN
- │   └─ issues      ← 중대재해법
- └─ overseas
-     ├─ ...         ← BLS/OSHA`}</pre>
-      </div>
-
-      <div style={{ display: "flex", gap: 14, margin: "14px 0 0", fontSize: 11, color: COLORS.textMuted }}>
-        <Legend swatch={colorMap.blue.border} label="공식 통계" />
-        <Legend swatch={colorMap.amber.border} label="내부 가상값" />
+      <div style={{ display: "flex", gap: 14, margin: "16px 0 0", fontSize: 11, color: COLORS.textMuted }}>
+        <Legend swatch={colorMap.gray.border} label="원본(불변)" />
+        <Legend swatch={colorMap.blue.border} label="정렬" />
+        <Legend swatch={colorMap.purple.border} label="속성추가" />
+        <Legend swatch={colorMap.coral.border} label="통합" />
       </div>
       <div style={{ background: "#E1F5EE", color: "#04342C", borderRadius: 10, padding: "10px 12px",
         fontSize: 11.5, lineHeight: 1.6, marginTop: 12 }}>
-        핵심: 공개 가능한 분포·규모는 정부 통계 그대로, 운영 비용·기준선만 가상으로 —
-        "공개 데이터와 영업비밀을 구분해 설계할 줄 안다"는 점을 데이터 계보로 증명.
+        핵심: 원본은 손대지 않고 Phase별 복제·변환만 수행 → 계보 추적이 가능하고,
+        통합 결과(Phase 3)가 분석·Cost·Limit 산출의 기반이 됩니다.
       </div>
     </div>
   );
@@ -1412,20 +1830,30 @@ export default function SmartSafetyApp() {
   const [region, setRegion] = useState("korea");
   const ds = DATASETS[region];
 
+  const goNext = () => setStageIndex((i) => Math.min(STAGES.length - 1, i + 1));
+  const goPrev = () => setStageIndex((i) => Math.max(0, i - 1));
+  const swipe = useSwipe(goNext, goPrev);
+
   const stages = {
+    intro: <IntroStage go={setStageIndex} />,
     data: <DataStage ds={ds} />,
     issue: <IssueStage ds={ds} />,
     strategy: <StrategyStage />,
     initiative: <InitiativeStage />,
     roadmap: <RoadmapStage />,
-    architecture: <ArchitectureStage />,
+    detail: <DetailStage />,
     qr: <QRStage />,
   };
 
   return (
     <ScreenShell>
       <Header stageIndex={stageIndex} setStageIndex={setStageIndex} region={region} setRegion={setRegion} />
-      <div style={{ flex: 1, overflowY: "auto" }}>{stages[STAGES[stageIndex].key]}</div>
+      <div style={{ flex: 1, overflowY: "auto" }} {...swipe}>
+        {stages[STAGES[stageIndex].key]}
+        <div style={{ textAlign: "center", fontSize: 11, color: COLORS.textMuted, padding: "6px 0 14px" }}>
+          ← 좌우로 스와이프해 페이지 이동 →
+        </div>
+      </div>
       <Footer stageIndex={stageIndex} setStageIndex={setStageIndex} />
     </ScreenShell>
   );
