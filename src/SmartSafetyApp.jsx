@@ -5,7 +5,8 @@ import {
 } from "recharts";
 import {
   AlertTriangle, Database, Search, Target, Map, ChevronRight, ChevronLeft,
-  Activity, ShieldCheck, TrendingUp, FileText, Layers, ArrowRight, CheckCircle2
+  Activity, ShieldCheck, TrendingUp, FileText, Layers, ArrowRight, CheckCircle2,
+  GitBranch, QrCode, ExternalLink, Smartphone
 } from "lucide-react";
 
 // ------------------------------------------------------------
@@ -309,7 +310,12 @@ const STAGES = [
   { key: "strategy", label: "전략 방향", icon: Target },
   { key: "initiative", label: "핵심 과제", icon: Layers },
   { key: "roadmap", label: "추진 로드맵", icon: Map },
+  { key: "architecture", label: "데이터 아키텍처", icon: GitBranch },
+  { key: "qr", label: "접속·QR", icon: QrCode },
 ];
+
+const APP_URL = "https://sabessito.github.io/ehs-demo/";
+const ARCH_URL = "https://sabessito.github.io/ehs-demo/docs/data_architecture.html";
 
 // ------------------------------------------------------------
 // Shared bits
@@ -335,7 +341,7 @@ function ScreenShell({ children }) {
   );
 }
 
-function Header({ stageIndex, region, setRegion }) {
+function Header({ stageIndex, setStageIndex, region, setRegion }) {
   const stage = STAGES[stageIndex];
   const Icon = stage.icon;
   return (
@@ -423,7 +429,36 @@ function Header({ stageIndex, region, setRegion }) {
           />
         ))}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+
+      {/* Direct tab strip (scrollable) */}
+      <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2,
+        WebkitOverflowScrolling: "touch" }}>
+        {STAGES.map((s, i) => {
+          const active = i === stageIndex;
+          return (
+            <button
+              key={s.key}
+              onClick={() => setStageIndex(i)}
+              style={{
+                flexShrink: 0,
+                border: "none",
+                borderRadius: 8,
+                padding: "5px 10px",
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                background: active ? "#fff" : "rgba(255,255,255,0.10)",
+                color: active ? COLORS.navy : "#CFE9DE",
+              }}
+            >
+              {i + 1}. {s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
         <span style={{ fontSize: 12, color: "#CFE9DE" }}>
           STEP {stageIndex + 1} / {STAGES.length}
         </span>
@@ -1176,6 +1211,199 @@ function RoadmapStage() {
 }
 
 // ------------------------------------------------------------
+// Stage 6: Data Architecture
+// ------------------------------------------------------------
+
+const ARCH_NODES = {
+  raw: [
+    { id: "KR-0", color: "blue", title: "KOSHA 마이크로데이터 (138,812행)", sub: "재해자 1명 = 1행 (진짜 최소 단위)",
+      rows: [["재해자ID","발생형태","대업종","재해정도"],["2023-0001","떨어짐","건설업","사망"],["2023-0002","끼임","제조업","요양4일+"],["2023-0005","화재·폭발","제조업","사망"]] },
+    { id: "KR-0b", color: "blue", title: "재해사례/사고사망 게시판 API", sub: "사건 1건 = 1레코드",
+      rows: [["사례번호","업종","사고개요","형태"],["C-23-1187","제조","프레스 금형 교체 중 끼임","끼임"],["C-23-1188","건설","비계 단부 추락(6m)","떨어짐"]] },
+    { id: "IN", color: "amber", title: "내부 가상값 (Cost·Event)", sub: "사업장 운영 데이터(영업비밀) → 시연용",
+      rows: [["구역","Cost(만원)","Event가중"],["고소작업장","8,500","30"],["프레스라인","4,200","13"]] },
+  ],
+  transform: [
+    { id: "STEP0", color: "gray", title: "집계 (GROUP BY 발생형태)", sub: "레코드 → 유형별 건수 → 비중%",
+      rows: [["발생형태","COUNT","비중%"],["떨어짐","Σ","33.6"],["끼임","…","12.8"],["부딪힘","…","7.5"]] },
+    { id: "STEP1", color: "gray", title: "정규화", sub: "비중% → 기준위험도(0~70)",
+      rows: [["유형","비중%","→Master"],["떨어짐","33.6","70"],["끼임","12.8","40"]] },
+    { id: "STEP3", color: "gray", title: "Risk Index 산출", sub: "Master + Event = 0~100",
+      rows: [["구역","Master","Event","=Index"],["고소작업장","70","30","100"],["프레스라인","40","13","53"]] },
+  ],
+  derive: [
+    { id: "ALARP", color: "coral", title: "ALARP / Limit", sub: "Cost × Index 좌표 + 법적선",
+      rows: [["구역","Cost","Index","판정"],["고소작업장","8,500","100","Unacceptable"],["도장·건조로","1,200","21","Acceptable*"]] },
+    { id: "OUT", color: "coral", title: "이슈·과제·로드맵", sub: "법규 매핑 → 우선순위",
+      rows: [["이슈","법규"],["고소작업장 떨어짐","중대재해법 §4"],["데이터 분리","§4-1-2 관리체계"]] },
+  ],
+};
+
+function ArchNode({ node, open, onToggle }) {
+  const c = colorMap[node.color] || colorMap.blue;
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <button
+        onClick={onToggle}
+        style={{
+          display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
+          background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12,
+          padding: "11px 13px", cursor: "pointer", font: "inherit",
+          borderBottomLeftRadius: open ? 0 : 12, borderBottomRightRadius: open ? 0 : 12,
+        }}
+      >
+        <span style={{ width: 10, height: 10, borderRadius: 3, background: c.border, flexShrink: 0 }} />
+        <span style={{ flex: 1 }}>
+          <b style={{ fontSize: 13, color: c.fg, display: "block" }}>{node.id} · {node.title}</b>
+          <span style={{ fontSize: 11, color: COLORS.textMuted }}>{node.sub}</span>
+        </span>
+        <span style={{ fontSize: 13, color: COLORS.textMuted, transform: open ? "rotate(90deg)" : "none", transition: "transform .15s" }}>▸</span>
+      </button>
+      {open && (
+        <div style={{ background: "#fff", border: `1px solid ${COLORS.line}`, borderTop: "none",
+          borderRadius: "0 0 12px 12px", padding: 12, overflowX: "auto" }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 11 }}>
+            <tbody>
+              {node.rows.map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((cell, ci) => (
+                    ri === 0
+                      ? <th key={ci} style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", background: "#F1EFE8", textAlign: "left", fontWeight: 600, whiteSpace: "nowrap" }}>{cell}</th>
+                      : <td key={ci} style={{ border: `1px solid ${COLORS.line}`, padding: "4px 6px", whiteSpace: "nowrap" }}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArchitectureStage() {
+  const [open, setOpen] = useState(null);
+  const toggle = (id) => setOpen(open === id ? null : id);
+  const groups = [
+    { label: "① 원본 (Raw — 최소단위 = 재해자/사건 레코드)", items: ARCH_NODES.raw },
+    { label: "② 가공 (Transform)", items: ARCH_NODES.transform },
+    { label: "③ 산출 (Derive)", items: ARCH_NODES.derive },
+  ];
+  return (
+    <div style={{ padding: "16px 16px 8px" }}>
+      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: "0 0 6px" }}>
+        원본의 최소 단위는 <b>재해자/사건 레코드</b>입니다. 집계(GROUP BY)해야 비중%이 나오고,
+        그것이 가공·산출을 거쳐 앱의 최종 데이터셋이 됩니다.
+      </p>
+      <p style={{ fontSize: 11.5, color: COLORS.teal, fontWeight: 600, margin: "0 0 14px" }}>
+        ▸ 각 항목을 탭하면 실제 데이터셋 샘플이 펼쳐집니다
+      </p>
+      {groups.map((g, gi) => (
+        <div key={gi}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: .5, color: COLORS.navy2, margin: "14px 0 8px" }}>
+            {g.label}
+          </div>
+          {g.items.map((n) => (
+            <ArchNode key={n.id} node={n} open={open === n.id} onToggle={() => toggle(n.id)} />
+          ))}
+          {gi < groups.length - 1 && (
+            <div style={{ textAlign: "center", color: COLORS.navy2, fontSize: 16, margin: "2px 0" }}>↓</div>
+          )}
+        </div>
+      ))}
+
+      <div style={{ background: COLORS.navy, borderRadius: 14, padding: 16, marginTop: 18 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#9FCBB8", marginBottom: 10 }}>④ 최종 — 앱 탑재 DATASETS</div>
+        <pre style={{ margin: 0, fontSize: 10.5, lineHeight: 1.7, color: "#CFE9DE", fontFamily: "ui-monospace,Menlo,monospace", whiteSpace: "pre" }}>{`DATASETS
+ ├─ korea
+ │   ├─ bigPicture  ← KR-2
+ │   ├─ hazardShare ← KR-1
+ │   ├─ cost        ← IN (가상)
+ │   ├─ riskIndex   ← KR-1 + IN
+ │   └─ issues      ← 중대재해법
+ └─ overseas
+     ├─ ...         ← BLS/OSHA`}</pre>
+      </div>
+
+      <div style={{ display: "flex", gap: 14, margin: "14px 0 0", fontSize: 11, color: COLORS.textMuted }}>
+        <Legend swatch={colorMap.blue.border} label="공식 통계" />
+        <Legend swatch={colorMap.amber.border} label="내부 가상값" />
+      </div>
+      <div style={{ background: "#E1F5EE", color: "#04342C", borderRadius: 10, padding: "10px 12px",
+        fontSize: 11.5, lineHeight: 1.6, marginTop: 12 }}>
+        핵심: 공개 가능한 분포·규모는 정부 통계 그대로, 운영 비용·기준선만 가상으로 —
+        "공개 데이터와 영업비밀을 구분해 설계할 줄 안다"는 점을 데이터 계보로 증명.
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Stage 7: Access / QR
+// ------------------------------------------------------------
+
+const QR_SIZE = 29;
+const QR_ROWS = [[0,1,2,3,4,5,6,11,12,13,14,15,16,19,22,23,24,25,26,27,28],[0,6,9,10,12,13,14,15,17,18,22,28],[0,2,3,4,6,9,11,12,14,15,17,22,24,25,26,28],[0,2,3,4,6,10,11,13,18,22,24,25,26,28],[0,2,3,4,6,9,10,14,15,16,18,22,24,25,26,28],[0,6,8,10,11,12,15,16,17,19,20,22,28],[0,1,2,3,4,5,6,8,10,12,14,16,18,20,22,23,24,25,26,27,28],[9,12,13,15,17,20],[0,3,5,6,8,9,10,11,14,15,16,18,20,21,23],[4,5,7,9,11,12,13,16,20,22,25,28],[3,6,7,8,9,11,12,13,14,16,17,19,23,24,25,26,27],[0,1,2,3,5,8,10,13,15,16,19,20,22,23,26,27],[0,4,6,11,14,16,17,19,20,21,22,25,27,28],[1,4,5,8,9,12,13,14,19,20],[1,2,6,7,13,14,16,17,18,20,22,23,25,26,27,28],[1,4,5,9,11,12,15,16,17,18,20,22,23,25,27],[3,4,5,6,7,8,10,11,12,13,17,19,20,21,27],[1,2,5,7,8,11,12,13,14,16,17,21,22,23,25,28],[0,5,6,8,9,14,17,20,23,24,27,28],[2,5,7,14,15,17,18,19,20,22,23,27,28],[0,3,4,6,11,12,15,16,18,19,20,21,22,23,24,26],[8,9,11,14,19,20,24,26,27,28],[0,1,2,3,4,5,6,10,12,16,17,20,22,24,27],[0,6,8,10,12,14,18,19,20,24,25,26],[0,2,3,4,6,9,11,12,17,20,21,22,23,24,27,28],[0,2,3,4,6,8,9,10,12,17,19,20,22,23,24,25,26,27],[0,2,3,4,6,11,12,14,16,17,19,20,21,24,25,26,28],[0,6,11,12,14,15,17,18,19,20,24,27],[0,1,2,3,4,5,6,8,9,10,11,13,14,15,17,20,24,27]];
+
+function QRStage() {
+  const cell = 7, border = 3;
+  const dim = (QR_SIZE + border * 2) * cell;
+  return (
+    <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
+        면접관이 폰으로 바로 접속할 수 있는 QR과 주소입니다. 발표자료에 이 화면을
+        그대로 띄워도 됩니다.
+      </p>
+
+      <Card style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 18 }}>
+        <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`} shapeRendering="crispEdges"
+          style={{ maxWidth: 240, width: "100%", height: "auto" }}>
+          <rect width={dim} height={dim} fill="#fff" />
+          {QR_ROWS.map((cols, r) =>
+            cols.map((c) => (
+              <rect key={`${r}-${c}`} x={(c + border) * cell} y={(r + border) * cell}
+                width={cell} height={cell} fill={COLORS.navy} />
+            ))
+          )}
+        </svg>
+        <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 10 }}>스캔하면 메인 앱으로 이동</div>
+      </Card>
+
+      <Card>
+        <SectionLabel>접속 주소</SectionLabel>
+        <LinkRow icon={Smartphone} label="메인 앱" url={APP_URL} />
+        <div style={{ height: 8 }} />
+        <LinkRow icon={GitBranch} label="데이터 아키텍처(웹)" url={ARCH_URL} />
+      </Card>
+
+      <div style={{ background: "#E1F5EE", color: "#04342C", borderRadius: 10, padding: "10px 12px",
+        fontSize: 11.5, lineHeight: 1.6 }}>
+        팁: 발표자료 첫 장에 이 QR을 넣고 "직접 보시겠어요?"로 자연스럽게 시연을 유도하세요.
+        코드를 수정해 push하면 1~3분 뒤 같은 주소에 자동 반영됩니다.
+      </div>
+    </div>
+  );
+}
+
+function LinkRow({ icon: Icon, label, url }) {
+  return (
+    <a href={url} target="_blank" rel="noreferrer"
+      style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none",
+        background: "#F6F5F1", borderRadius: 10, padding: "10px 12px" }}>
+      <span style={{ width: 32, height: 32, borderRadius: 8, background: COLORS.navy,
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon size={16} color="#9FCBB8" />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: "#1B1B18", display: "block" }}>{label}</span>
+        <span style={{ fontSize: 10.5, color: COLORS.teal, wordBreak: "break-all" }}>{url}</span>
+      </span>
+      <ExternalLink size={15} color={COLORS.textMuted} style={{ flexShrink: 0 }} />
+    </a>
+  );
+}
+
+// ------------------------------------------------------------
 // Main App
 // ------------------------------------------------------------
 
@@ -1190,11 +1418,13 @@ export default function SmartSafetyApp() {
     strategy: <StrategyStage />,
     initiative: <InitiativeStage />,
     roadmap: <RoadmapStage />,
+    architecture: <ArchitectureStage />,
+    qr: <QRStage />,
   };
 
   return (
     <ScreenShell>
-      <Header stageIndex={stageIndex} region={region} setRegion={setRegion} />
+      <Header stageIndex={stageIndex} setStageIndex={setStageIndex} region={region} setRegion={setRegion} />
       <div style={{ flex: 1, overflowY: "auto" }}>{stages[STAGES[stageIndex].key]}</div>
       <Footer stageIndex={stageIndex} setStageIndex={setStageIndex} />
     </ScreenShell>
