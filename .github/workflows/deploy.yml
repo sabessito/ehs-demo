@@ -1,15 +1,17 @@
 name: Deploy to GitHub Pages
 
+# main 브랜치에 push될 때마다 자동 빌드·배포
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: # 수동 실행 버튼도 제공
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# 동시 배포 충돌 방지
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -18,15 +20,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -34,5 +46,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
