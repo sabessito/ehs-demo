@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>데이터 아키텍처 — 원본 보존 · Phase 1/2/3</title>
+<style>
+  :root{
+    --navy:#0E2A38; --navy2:#16435A; --teal:#1D9E75; --bg:#F6F5F1;
+    --line:#E2E0D8; --muted:#6B6A63;
+    --blue-bg:#E6F1FB; --blue-bd:#85B7EB;
+    --purple-bg:#EEEDFE; --purple-bd:#AFA9EC;
+    --coral-bg:#FAECE7; --coral-bd:#F0997B;
+    --gray-bg:#F1EFE8; --gray-bd:#B4B2A9;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1B1B18;}
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 60px;}
+  h1{font-size:20px;font-weight:700;color:var(--navy);margin:0 0 4px;}
+  .lead{font-size:12.5px;color:#3A3933;margin:0 0 4px;line-height:1.6;}
+  .keybox{background:var(--navy);border-radius:12px;padding:12px 14px;margin:12px 0 14px;}
+  .keybox .t{font-size:11px;font-weight:700;color:#9FCBB8;letter-spacing:.5px;margin-bottom:8px;}
+  .keybox pre{margin:0;font-size:11px;line-height:1.7;color:#CFE9DE;font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap;}
+  .hint{font-size:11.5px;color:var(--teal);font-weight:600;margin:8px 0 14px;}
+  .stage-label{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--navy2);margin:16px 0 8px;}
+  .node{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;font:inherit;}
+  .node.open{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+  .gray{background:var(--gray-bg);border-color:var(--gray-bd);} .gray .dot{background:var(--gray-bd);}
+  .blue{background:var(--blue-bg);border-color:var(--blue-bd);} .blue .dot{background:var(--blue-bd);}
+  .purple{background:var(--purple-bg);border-color:var(--purple-bd);} .purple .dot{background:var(--purple-bd);}
+  .coral{background:var(--coral-bg);border-color:var(--coral-bd);} .coral .dot{background:var(--coral-bd);}
+  .dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .tt{flex:1;}
+  .tt b{font-size:13px;display:block;}
+  .tt span{font-size:11px;color:var(--muted);}
+  .chev{font-size:13px;color:var(--muted);transition:transform .15s;}
+  .node.open .chev{transform:rotate(90deg);}
+  .panel{display:none;background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 12px 12px;margin:-8px 0 10px;padding:12px;overflow-x:auto;}
+  .panel.open{display:block;}
+  table{border-collapse:collapse;width:100%;font-size:11px;}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;white-space:nowrap;}
+  th{background:#F1EFE8;font-weight:600;}
+  .arrow{text-align:center;color:var(--navy2);font-size:13px;margin:2px 0;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:16px 0 0;font-size:11px;color:var(--muted);}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .note{font-size:11.5px;line-height:1.6;margin-top:12px;background:#E1F5EE;color:#04342C;border-radius:10px;padding:10px 12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>데이터 아키텍처</h1>
+  <p class="lead"><b>원본은 절대 수정하지 않습니다.</b> 원본을 복제해 Phase 1 사건·사람 정렬,
+     Phase 2 근본원인·현상 속성 추가, Phase 3 통합의 단계로만 가공합니다.</p>
+
+  <div class="keybox">
+    <div class="t">KEY 계층</div>
+    <pre>root_cause_id   (근본원인 1)
+   &#9492;&#9472; incident_id   (사건 N)
+        &#9492;&#9472; victim_id   (피해자 M, 보상 단위)</pre>
+  </div>
+
+  <p class="hint">&#9656; 각 항목을 탭하면 실제 데이터셋 샘플이 펼쳐집니다</p>
+
+  <div class="stage-label">원본 (Raw) — 절대 수정하지 않음 · 불변</div>
+  <button class="node gray" data-t="r1"><span class="dot"></span><span class="tt"><b>원본 &#9312; KOSHA 마이크로데이터</b><span>138,812행 · 불변</span></span><span class="chev">&#9656;</span></button>
+  <div class="panel" id="r1"><table><tr><th>재해자ID</th><th>발생형태</th><th>업종</th><th>재해정도</th></tr><tr><td>2023-0001</td><td>떨어짐</td><td>건설</td><td>사망</td></tr><tr><td>2023-0002</td><td>끼임</td><td>제조</td><td>요양</td></tr></table></div>
+
+  <button class="node gray" data-t="r2"><span class="dot"></span><span class="tt"><b>원본 &#9313; 사고사례 API</b><span>사건 단위 서술 · 불변</span></span><span class="chev">&#9656;</span></button>
+  <div class="panel" id="r2"><table><tr><th>사례번호</th><th>사고개요</th><th>형태</th></tr><tr><td>C-23-1187</td><td>프레스 끼임</td><td>끼임</td></tr><tr><td>C-23-1188</td><td>비계 추락</td><td>떨어짐</td></tr></table></div>
+
+  <button class="node gray" data-t="r3"><span class="dot"></span><span class="tt"><b>원본 &#9314; 美 BLS CFOI</b><span>case-level · 불변</span></span><span class="chev">&#9656;</span></button>
+  <div class="panel" id="r3"><table><tr><th>case_id</th><th>event</th><th>연도</th></tr><tr><td>US-9001</td><td>운수</td><td>2023</td></tr><tr><td>US-9002</td><td>폭력</td><td>2023</td></tr></table></div>
+
+  <div class="arrow">&#8595; (원본 복제 &#8594; 가공)</div>
+
+  <div class="stage-label">Phase 1 — 사건·사람 관점 정렬</div>
+  <button class="node blue" data-t="p1"><span class="dot"></span><span class="tt"><b>Phase 1 정렬</b><span>원본 복제본을 incident/victim 축으로 정렬</span></span><span class="chev">&#9656;</span></button>
+  <div class="panel" id="p1"><table><tr><th>incident_id</th><th>victim_id</th><th>발생형태</th><th>재해정도</th></tr><tr><td>I-2301</td><td>V-1001</td><td>끼임</td><td>사망</td></tr><tr><td>I-2301</td><td>V-1002</td><td>끼임</td><td>중상</td></tr><tr><td>I-2305</td><td>V-1003</td><td>떨어짐</td><td>사망</td></tr></table></div>
+
+  <div class="arrow">&#8595;</div>
+
+  <div class="stage-label">Phase 2 — 근본원인·현상 속성 추가</div>
+  <button class="node purple" data-t="p2"><span class="dot"></span><span class="tt"><b>Phase 2 속성 추가</b><span>현상&#8594;직접원인&#8594;근본원인(6M) 컬럼 추가</span></span><span class="chev">&#9656;</span></button>
+  <div class="panel" id="p2"><table><tr><th>incident_id</th><th>현상</th><th>직접원인</th><th>근본원인(6M)</th></tr><tr><td>I-2301</td><td>끼임</td><td>방호 미작동</td><td>협착표준 부재(Method)</td></tr><tr><td>I-2305</td><td>떨어짐</td><td>안전대 미체결</td><td>추락설계 누락(Machine)</td></tr></table></div>
+
+  <div class="arrow">&#8595;</div>
+
+  <div class="stage-label">Phase 3 — 통합(Integration)</div>
+  <button class="node coral" data-t="p3"><span class="dot"></span><span class="tt"><b>Phase 3 통합</b><span>Phase1·2 가공본 + 내부 Cost/Event 통합 &#8594; 분석 기반</span></span><span class="chev">&#9656;</span></button>
+  <div class="panel" id="p3"><table><tr><th>root_cause_id</th><th>연결사건</th><th>피해자</th><th>Cost(만원)</th><th>Index</th></tr><tr><td>RC-01</td><td>8</td><td>9</td><td>8,500</td><td>100</td></tr><tr><td>RC-03</td><td>12</td><td>13</td><td>4,200</td><td>53</td></tr></table></div>
+
+  <div class="legend">
+    <span><i style="background:var(--gray-bg);border:1px solid var(--gray-bd)"></i>원본(불변)</span>
+    <span><i style="background:var(--blue-bg);border:1px solid var(--blue-bd)"></i>정렬</span>
+    <span><i style="background:var(--purple-bg);border:1px solid var(--purple-bd)"></i>속성추가</span>
+    <span><i style="background:var(--coral-bg);border:1px solid var(--coral-bd)"></i>통합</span>
+  </div>
+
+  <div class="note">핵심: 원본은 손대지 않고 Phase별 복제·변환만 수행 &#8594; 계보 추적이 가능하고, 통합 결과(Phase 3)가 분석·Cost·Limit 산출의 기반이 됩니다.</div>
+</div>
+
+<script>
+  document.querySelectorAll('.node').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var panel = document.getElementById(btn.dataset.t);
+      var isOpen = panel.classList.contains('open');
+      document.querySelectorAll('.panel.open').forEach(function(p){p.classList.remove('open');});
+      document.querySelectorAll('.node.open').forEach(function(n){n.classList.remove('open');});
+      if(!isOpen){ panel.classList.add('open'); btn.classList.add('open'); }
+    });
+  });
+</script>
+</body>
+</html>

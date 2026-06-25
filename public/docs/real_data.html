@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>실제 데이터셋 — KOSHA 제조업 사망 마이크로데이터</title>
+<style>
+  :root{--navy:#0E2A38;--navy2:#16435A;--teal:#1D9E75;--bg:#F6F5F1;--line:#E2E0D8;--muted:#6B6A63;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1B1B18;}
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 60px;}
+  h1{font-size:20px;font-weight:700;color:var(--navy);margin:0 0 4px;}
+  .lead{font-size:12.5px;color:#3A3933;line-height:1.6;margin:0 0 12px;}
+  .src{font-size:11px;color:var(--muted);line-height:1.6;background:#EFEDE6;border-radius:8px;padding:8px 10px;margin:0 0 14px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;}
+  .label{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+  table{border-collapse:collapse;width:100%;font-size:11.5px;}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;white-space:nowrap;}
+  th{background:#F1EFE8;font-weight:600;}
+  .bar-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:11.5px;}
+  .bar-row .nm{width:92px;flex-shrink:0;}
+  .bar-row .track{flex:1;background:#EEEBE3;border-radius:4px;height:14px;overflow:hidden;}
+  .bar-row .fill{height:100%;background:var(--navy2);border-radius:4px;}
+  .bar-row .v{width:52px;text-align:right;flex-shrink:0;color:var(--muted);}
+  .stat{display:flex;gap:8px;}
+  .stat .t{flex:1;background:#F6F5F1;border-radius:10px;padding:10px 8px;text-align:center;}
+  .stat .t b{font-size:17px;color:var(--navy);display:block;line-height:1.1;}
+  .stat .t span{font-size:10px;color:var(--muted);}
+  .note{font-size:11.5px;line-height:1.6;background:#E1F5EE;color:#04342C;border-radius:10px;padding:10px 12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>실제 데이터셋 — 제조업 사망</h1>
+  <p class="lead">업로드한 <b>KOSHA 산업재해 마이크로데이터</b>를 머지·집계한 실수치입니다.
+     재해자(사람) 1명 = 1행, 제조업 사망자 한정.</p>
+  <div class="src">출처: KOSHA 산업재해통계 마이크로데이터(2017~2025) · 제조업 사망 4,374행 머지 · 단위 행 데이터</div>
+
+  <div class="card">
+    <div class="label">큰 그림 — 제조업 사망 (2017~2025)</div>
+    <div class="stat">
+      <div class="t"><b>4,374</b><span>제조업 사망(명)</span></div>
+      <div class="t"><b>2,657</b><span>업무상질병 60.7%</span></div>
+      <div class="t"><b>1,717</b><span>사고성 39.3%</span></div>
+    </div>
+    <p style="font-size:11px;color:#6B6A63;margin:10px 0 0;line-height:1.6;">
+      9개 연도 합산. 업무상질병이 사고성보다 많은 것이 제조업 사망의 특징.</p>
+  </div>
+
+  <div class="card">
+    <div class="label">사고성 사망 발생형태 (질병 제외 1,717명, %)</div>
+    <div class="bar-row"><span class="nm">끼임</span><span class="track"><span class="fill" style="width:100%;background:#D85A30"></span></span><span class="v">29.8</span></div>
+    <div class="bar-row"><span class="nm">떨어짐</span><span class="track"><span class="fill" style="width:65%"></span></span><span class="v">19.4</span></div>
+    <div class="bar-row"><span class="nm">깔림·뒤집힘</span><span class="track"><span class="fill" style="width:32%"></span></span><span class="v">9.6</span></div>
+    <div class="bar-row"><span class="nm">물체에 맞음</span><span class="track"><span class="fill" style="width:32%"></span></span><span class="v">9.5</span></div>
+    <div class="bar-row"><span class="nm">부딪힘</span><span class="track"><span class="fill" style="width:27%"></span></span><span class="v">7.9</span></div>
+    <div class="bar-row"><span class="nm">폭발·파열</span><span class="track"><span class="fill" style="width:21%"></span></span><span class="v">6.2</span></div>
+    <p style="font-size:11px;color:#6B6A63;margin:8px 0 0;line-height:1.6;">
+      제조업은 '끼임'이 1위 — 전 산업의 '떨어짐' 우세와 다른 실측 결과.</p>
+  </div>
+
+  <div class="card">
+    <div class="label">연도별 사망자 (명)</div>
+    <div class="bar-row"><span class="nm">2017</span><span class="track"><span class="fill" style="width:80%"></span></span><span class="v">433</span></div>
+    <div class="bar-row"><span class="nm">2018</span><span class="track"><span class="fill" style="width:88%"></span></span><span class="v">472</span></div>
+    <div class="bar-row"><span class="nm">2019</span><span class="track"><span class="fill" style="width:91%"></span></span><span class="v">492</span></div>
+    <div class="bar-row"><span class="nm">2020</span><span class="track"><span class="fill" style="width:87%"></span></span><span class="v">469</span></div>
+    <div class="bar-row"><span class="nm">2021</span><span class="track"><span class="fill" style="width:95%"></span></span><span class="v">512</span></div>
+    <div class="bar-row"><span class="nm">2022</span><span class="track"><span class="fill" style="width:94%"></span></span><span class="v">506</span></div>
+    <div class="bar-row"><span class="nm">2023</span><span class="track"><span class="fill" style="width:88%"></span></span><span class="v">476</span></div>
+    <div class="bar-row"><span class="nm">2024</span><span class="track"><span class="fill" style="width:88%"></span></span><span class="v">476</span></div>
+    <div class="bar-row"><span class="nm">2025</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="v">538</span></div>
+  </div>
+
+  <div class="card">
+    <div class="label">집중 구간 (실집계)</div>
+    <table>
+      <tr><th>구분</th><th>1위</th><th>2위</th></tr>
+      <tr><td>종업종</td><td>기계기구·금속·비금속(1,588)</td><td>선박건조·수리(366)</td></tr>
+      <tr><td>규모</td><td>5인 미만(873)</td><td>10~19인(697)</td></tr>
+      <tr><td>연령</td><td>60세 이상(1,670)</td><td>55~59세(741)</td></tr>
+    </table>
+    <p style="font-size:11px;color:#6B6A63;margin:8px 0 0;line-height:1.6;">
+      소규모·고령 사업장에 사망이 집중 — 관리 사각지대를 실데이터가 지목.</p>
+  </div>
+
+  <div class="card">
+    <div class="label">마이크로데이터 컬럼 (14열, 4,374행)</div>
+    <table>
+      <tr><th>컬럼</th><th>예시</th></tr>
+      <tr><td>통계기준년월</td><td>202512</td></tr>
+      <tr><td>종업종 / 대업종</td><td>선박건조및수리업 / 제조업</td></tr>
+      <tr><td>발생형태</td><td>끼임, 떨어짐, 업무상질병...</td></tr>
+      <tr><td>규모 / 성별 / 연령</td><td>10~19인 / 남 / 60세 이상</td></tr>
+      <tr><td>근무기간 / 재해정도</td><td>6개월미만 / 사망자</td></tr>
+      <tr><td>지역 / 질병종류</td><td>경남 / 진폐증...</td></tr>
+    </table>
+    <p style="font-size:11px;color:#6B6A63;margin:8px 0 0;line-height:1.6;">
+      행 단위(사람=victim) 데이터. 발생형태로 GROUP BY하면 위 비중이 산출됩니다.</p>
+  </div>
+
+  <div class="note">
+    위 수치는 업로드된 KOSHA 마이크로데이터를 직접 머지·집계한 <b>실제 값</b>입니다.
+    개인 식별정보는 포함되지 않은 비식별 통계입니다.
+  </div>
+</div>
+</body>
+</html>
