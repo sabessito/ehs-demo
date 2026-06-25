@@ -29,254 +29,211 @@ import {
 const LEGAL_MIN_INDEX = 40; // 법적 최소 기준선 — 위험성평가·개선조치 의무 이행 증빙이 필요한 지수
 const UNACCEPTABLE_INDEX = 75; // 허용불가 임계값 — 비용과 무관하게 즉시조치
 
+// 연도별 항목별 투자비용(가상, 만원) — Risk Index 발생가능성 산출 기반
+const ANNUAL_COST = [
+  { area:"프레스·기계라인", type:"끼임",       y2021:700,  y2022:900,  y2023:1200, y2024:1400, y2025:1500 },
+  { area:"고소작업장",     type:"떨어짐",       y2021:5000, y2022:6500, y2023:7500, y2024:8000, y2025:8500 },
+  { area:"중량물 취급",   type:"깔림·뒤집힘",   y2021:500,  y2022:600,  y2023:700,  y2024:800,  y2025:900  },
+  { area:"자재 적치구역", type:"물체에 맞음",    y2021:600,  y2022:700,  y2023:800,  y2024:900,  y2025:1000 },
+  { area:"구내 운반",     type:"부딪힘",        y2021:1100, y2022:1300, y2023:1500, y2024:1700, y2025:1900 },
+  { area:"화학·반응공정", type:"폭발·파열",      y2021:400,  y2022:500,  y2023:600,  y2024:700,  y2025:800  },
+];
+// 해외 연도별 투자
+const ANNUAL_COST_US = [
+  { area:"구내 운반·트럭", type:"운수사고",       y2021:4000, y2022:5500, y2023:7800, y2024:8200, y2025:8800 },
+  { area:"고소작업장",     type:"떨어짐·미끄러짐", y2021:2000, y2022:2500, y2023:3000, y2024:3500, y2025:4000 },
+  { area:"화학 취급구역",  type:"유해물질 노출",   y2021:1500, y2022:2000, y2023:2500, y2024:3000, y2025:3600 },
+  { area:"보안·외곽",      type:"폭력·가해행위",   y2021:400,  y2022:500,  y2023:700,  y2024:900,  y2025:1100 },
+  { area:"출하·야드",      type:"장비·물체 접촉",  y2021:800,  y2022:1000, y2023:1200, y2024:1500, y2025:1800 },
+  { area:"도장·건조로",    type:"화재·폭발",       y2021:500,  y2022:700,  y2023:900,  y2024:1100, y2025:1300 },
+];
+
 const DATASETS = {
   korea: {
-    key: "korea",
-    label: "한국",
-    flag: "🇰🇷",
+    key: "korea", label: "한국", flag: "🇰🇷",
     site: { name: "제조업 전체(실데이터)", workers: 0 },
     law: "중대재해처벌법",
     source: "KOSHA 산업재해 마이크로데이터 — 제조업 사망 4,374명(2017~2025) 실집계",
-    // 큰 그림 — 업로드된 KOSHA 마이크로데이터 실집계 (제조업 사망)
     bigPicture: {
-      year: 2025,
-      scopeLabel: "제조업 사망 (KOSHA 마이크로, 2017~2025)",
-      injured: 2657, // 업무상질병 사망
-      fatal: 4374, // 제조업 사망 총계
-      accidentFatal: 1717, // 사고성 사망
+      year: 2025, scopeLabel: "제조업 사망 (KOSHA 마이크로, 2017~2025)",
+      injured: 2657, fatal: 4374, accidentFatal: 1717,
       note: "제조업 사망 4,374명 = 업무상질병 2,657명(60.7%) + 사고성 1,717명(39.3%). 9개 연도 실집계.",
     },
-    // 사고성 재해만 발생형태 분포 (실데이터, 질병 제외 1,717명 기준)
-    hazardShare: [
-      { type: "끼임", share: 29.8 },
-      { type: "떨어짐", share: 19.4 },
-      { type: "깔림·뒤집힘", share: 9.6 },
-      { type: "물체에 맞음", share: 9.5 },
-      { type: "부딪힘", share: 7.9 },
-      { type: "폭발·파열", share: 6.2 },
-    ],
-    cost: [
-      { area: "프레스·기계라인", cost: 4200 },
-      { area: "고소작업장", cost: 8500 },
-      { area: "중량물 취급", cost: 1500 },
-      { area: "자재 적치구역", cost: 1800 },
-      { area: "구내 운반", cost: 3000 },
-      { area: "화학·반응공정", cost: 1200 },
-    ],
-    riskIndex: [
-      { area: "프레스·기계라인", hazard: "끼임", master: 70, event: 30 },
-      { area: "고소작업장", hazard: "떨어짐", master: 46, event: 16 },
-      { area: "중량물 취급", hazard: "깔림·뒤집힘", master: 24, event: 9 },
-      { area: "자재 적치구역", hazard: "물체에 맞음", master: 23, event: 8 },
-      { area: "구내 운반", hazard: "부딪힘", master: 19, event: 7 },
-      { area: "화학·반응공정", hazard: "폭발·파열", master: 15, event: 5 },
+    // 기준위험도(baseRisk): 전체사고 대비 비중 %, 3년사고건수(실), 3년투자(가상 만원), Index 산출값
+    riskItems: [
+      { area:"프레스·기계라인", type:"끼임",       baseRisk:29.8, inc3y:138, cost3y:4100, baseNorm:100, occNorm:100, index:100 },
+      { area:"중량물 취급",   type:"깔림·뒤집힘",   baseRisk:9.6,  inc3y:57,  cost3y:2400, baseNorm:32,  occNorm:71,  index:47  },
+      { area:"고소작업장",    type:"떨어짐",        baseRisk:19.4, inc3y:100, cost3y:24000,baseNorm:65,  occNorm:12,  index:44  },
+      { area:"자재 적치구역", type:"물체에 맞음",   baseRisk:9.5,  inc3y:55,  cost3y:2700, baseNorm:32,  occNorm:61,  index:43  },
+      { area:"구내 운반",     type:"부딪힘",        baseRisk:7.9,  inc3y:48,  cost3y:5100, baseNorm:27,  occNorm:28,  index:27  },
+      { area:"화학·반응공정", type:"폭발·파열",     baseRisk:6.2,  inc3y:31,  cost3y:2100, baseNorm:21,  occNorm:44,  index:30  },
     ],
     alarp: [
-      { area: "프레스·기계라인", cost: 4200, index: 100 },
-      { area: "고소작업장", cost: 8500, index: 62 },
-      { area: "중량물 취급", cost: 1500, index: 33 },
-      { area: "자재 적치구역", cost: 1800, index: 31 },
-      { area: "구내 운반", cost: 3000, index: 26 },
-      { area: "화학·반응공정", cost: 1200, index: 20 },
+      { area:"프레스·기계라인", cost:4100,  index:100 },
+      { area:"중량물 취급",    cost:2400,  index:47  },
+      { area:"고소작업장",     cost:24000, index:44  },
+      { area:"자재 적치구역", cost:2700,  index:43  },
+      { area:"화학·반응공정", cost:2100,  index:30  },
+      { area:"구내 운반",     cost:5100,  index:27  },
     ],
-    topNote:
-      "실데이터: 제조업 사고성 사망은 '끼임'이 29.8%로 1위(전 산업의 '떨어짐' 우세와 다름). 프레스·기계라인이 최우선 관리 대상.",
+    topNote: "제조업 사고성 사망의 29.8%가 '끼임' — 전 산업 '떨어짐' 우세와 다름. 고소작업장은 투자 최다에도 Index 3위.",
+    annualCost: ANNUAL_COST,
   },
 
   overseas: {
-    key: "overseas",
-    label: "해외 (미국)",
-    flag: "🇺🇸",
-    site: { name: "(샘플) Hanbit Precision GA Plant (미국 조지아)", workers: 480 },
-    law: "OSH Act / OSHA (중대재해 시 형사책임 가능)",
+    key: "overseas", label: "해외 (미국)", flag: "🇺🇸",
+    site: { name: "제조업 (美 BLS, 전체)", workers: 0 },
+    law: "OSH Act / OSHA",
     source: "美 BLS Census of Fatal Occupational Injuries 2023",
     bigPicture: {
-      year: 2023,
-      scopeLabel: "미국 전체 (치명재해 CFOI)",
-      injured: 2600000, // 민간 비치명 부상·질환 추정(약 260만건)
-      fatal: 5283, // 치명재해 총계
-      accidentFatal: 5283,
-      note: "치명재해 5,283명, 비치명 부상·질환 약 260만건. 운수·폭력 등 한국과 다른 분포.",
+      year: 2023, scopeLabel: "미국 치명재해 (CFOI 2023)",
+      injured: 2600000, fatal: 5283, accidentFatal: 5283,
+      note: "치명재해 5,283명. 운수·폭력이 한국과 다른 분포를 보임.",
     },
-    hazardShare: [
-      { type: "운수사고(Transport)", share: 36.8 },
-      { type: "유해물질 노출", share: 15.5 },
-      { type: "폭력·가해행위", share: 14.0 },
-      { type: "떨어짐·미끄러짐", share: 16.8 },
-      { type: "장비·물체 접촉", share: 11.0 },
-      { type: "화재·폭발", share: 2.0 },
-    ],
-    cost: [
-      { area: "구내 운반·트럭", cost: 7800 },
-      { area: "화학 취급구역", cost: 3600 },
-      { area: "고소작업장", cost: 4000 },
-      { area: "출하·야드", cost: 2400 },
-      { area: "보안·외곽", cost: 1100 },
-      { area: "도장·건조로", cost: 1300 },
-    ],
-    riskIndex: [
-      { area: "구내 운반·트럭", hazard: "운수사고", master: 70, event: 28 },
-      { area: "화학 취급구역", hazard: "유해물질 노출", master: 45, event: 12 },
-      { area: "고소작업장", hazard: "떨어짐·미끄러짐", master: 48, event: 14 },
-      { area: "보안·외곽", hazard: "폭력·가해행위", master: 42, event: 9 },
-      { area: "출하·야드", hazard: "장비·물체 접촉", master: 33, event: 6 },
-      { area: "도장·건조로", hazard: "화재·폭발", master: 16, event: 3 },
+    riskItems: [
+      { area:"구내 운반·트럭", type:"운수사고",       baseRisk:36.8, inc3y:420, cost3y:24000, baseNorm:100, occNorm:100, index:100 },
+      { area:"화학 취급구역",  type:"유해물질 노출",   baseRisk:15.5, inc3y:175, cost3y:9100,  baseNorm:42,  occNorm:110, index:69  },
+      { area:"고소작업장",     type:"떨어짐·미끄러짐", baseRisk:16.8, inc3y:191, cost3y:10500, baseNorm:46,  occNorm:103, index:69  },
+      { area:"보안·외곽",      type:"폭력·가해행위",   baseRisk:14.0, inc3y:159, cost3y:2700,  baseNorm:38,  occNorm:335, index:157 },
+      { area:"출하·야드",      type:"장비·물체 접촉",  baseRisk:11.0, inc3y:125, cost3y:4500,  baseNorm:30,  occNorm:158, index:81  },
+      { area:"도장·건조로",    type:"화재·폭발",       baseRisk:2.0,  inc3y:23,  cost3y:3000,  baseNorm:5,   occNorm:44,  index:21  },
     ],
     alarp: [
-      { area: "구내 운반·트럭", cost: 7800, index: 98 },
-      { area: "고소작업장", cost: 4000, index: 62 },
-      { area: "화학 취급구역", cost: 3600, index: 57 },
-      { area: "보안·외곽", cost: 1100, index: 51 },
-      { area: "출하·야드", cost: 2400, index: 39 },
-      { area: "도장·건조로", cost: 1300, index: 19 },
+      { area:"보안·외곽",      cost:2700,  index:100 },
+      { area:"구내 운반·트럭", cost:24000, index:65  },
+      { area:"출하·야드",      cost:4500,  index:53  },
+      { area:"고소작업장",     cost:10500, index:45  },
+      { area:"화학 취급구역",  cost:9100,  index:45  },
+      { area:"도장·건조로",    cost:3000,  index:14  },
     ],
-    topNote:
-      "미국은 '운수사고'가 1위(36.8%)·'폭력행위'(14%)가 큰 비중 — 한국에 없는 유형. 구내 운반/외곽 보안이 핵심 관리점.",
+    topNote: "미국은 '운수사고' 1위(36.8%). 보안·외곽의 '폭력행위'는 투자 최소인데 발생가능성이 최고 — 한국 표준에 없는 공백.",
+    annualCost: ANNUAL_COST_US,
   },
 };
 
 const issuesByRegion = {
   korea: [
     {
-      id: 1,
-      title: "프레스·기계라인 '끼임' — 제조업 사고사망 실측 1위(29.8%)",
-      legal: "중대재해처벌법 §4 위험성평가 이행 의무",
-      detail:
-        "KOSHA 마이크로데이터 실집계 결과 제조업 사고성 사망의 29.8%가 '끼임'으로, 전 산업의 '떨어짐' 우세와 다름. 프레스·기계라인이 Risk Index 100으로 최우선. 전 산업 평균이 아닌 '제조업 실데이터'에 맞춘 위험성평가 재설계가 필요.",
-      color: "coral",
+      id: 1, color: "coral",
+      title: "끼임이 1위 — 그러나 투자는 꼴찌 수준",
+      sub: "Risk Index 100 · 3년 투자 0.41억",
+      body: "제조업 사고사망의 29.8%가 '끼임'으로 1위입니다. 그런데 3년간 쏟은 투자비는 0.41억으로 전체 항목 중 최소입니다. 사고는 가장 많이 나는데 관리는 가장 덜 받고 있는 것입니다. 발생가능성 지수도 100으로 최고 — 즉시 집중 투자가 필요한 퀵윈 과제입니다.",
     },
     {
-      id: 2,
-      title: "업무상질병 사망이 60.7% — 사고성보다 큰 비중",
-      legal: "중대재해처벌법 §4-1-3 유해·위험요인 확인·개선 절차",
-      detail:
-        "제조업 사망 4,374명 중 업무상질병이 2,657명(60.7%)으로 사고성(39.3%)보다 많음. 화학물질 노출·진폐·뇌심혈관 등 장기 누적형이라 사고 중심 관리에서 누락되기 쉬움. 60세 이상(1,670명)·소규모 사업장(5인미만 873명)에 집중되는 점도 실데이터로 확인.",
-      color: "amber",
+      id: 2, color: "amber",
+      title: "고소작업장 — 투자 2.4억인데 사고가 줄지 않는다",
+      sub: "3년 투자 2.4억(최다) · 3년 사고 100건",
+      body: "고소작업장 떨어짐은 3년간 2.4억을 투자해 전체 항목 중 가장 많이 썼습니다. 그런데도 3년간 100건이 발생했고 Risk Index는 여전히 3위입니다. 투자금액이 아니라 투자 방향이 잘못된 것입니다. 안전난간·생명줄 위주에서 센서 기반 사전감지로 방향을 전환해야 합니다.",
     },
     {
-      id: 3,
-      title: "Hazard 마스터·Event 로그·점검 데이터가 분리 운영",
-      legal: "중대재해처벌법 §4-1-2 안전보건관리체계 구축 의무",
-      detail:
-        "위험성평가(Hazard), 현장 발생기록(Event), 정기 점검 결과가 각각 다른 시스템에 분산. 경영책임자 보고용 데이터와 현장 운영 데이터 간 연계가 없어 Risk Index의 실시간 산출과 사전 예측이 불가능한 구조.",
-      color: "blue",
-    },
-    {
-      id: 4,
-      title: "Cost·Risk·Limit 교차 기준(ALARP) 부재 — 투자 의사결정 비효율",
-      legal: "중대재해처벌법 §4-1-4 재발방지 대책 수립·이행",
-      detail:
-        "비용 최적점만 보면 법적 리스크에, 법적 최소선만 보면 비용 비효율에 노출됨. 두 기준을 동시에 추적하는 ALARP 기반 운영기준선(Limit)이 없어, 어느 구역에 얼마를 투자해야 하는지 정량적 근거가 부재.",
-      color: "purple",
+      id: 3, color: "blue",
+      title: "업무상질병이 사망의 60.7% — 사고 관리만으론 절반도 못 막는다",
+      sub: "2,657명 질병 사망 · 60세 이상 1,670명",
+      body: "제조업 전체 사망의 60.7%가 업무상질병입니다. 지금까지의 사고 중심 안전관리로는 이 절반 이상을 놓칩니다. 진폐·뇌심혈관 등 장기 누적형 질병이 주를 이루며, 60세 이상·5인 미만 소규모 사업장에 집중됩니다. 데이터로 고위험군을 사전에 식별하는 체계가 필요합니다.",
     },
   ],
   overseas: [
     {
-      id: 1,
-      title: "구내 운반·트럭 '운수사고' — 미국 1위 유형(36.8%)의 집중 구역",
-      legal: "OSHA 1910 Powered Industrial Trucks (지게차 안전기준)",
-      detail:
-        "한국과 달리 미국은 '운수사고'가 전체 치명재해의 36.8%로 압도적 1위. 구내 트럭·지게차·보행자 동선 충돌이 핵심. Cost 최다 투입에도 Risk Index 98로 허용불가 — 동선 분리·속도제어 등 방향 재설계 필요.",
-      color: "coral",
+      id: 1, color: "coral",
+      title: "보안·외곽 '폭력행위' — 투자 최소, 발생가능성 최고",
+      sub: "3년 투자 0.27억 · 발생가능성 Index 335",
+      body: "한국 안전관리에는 없는 항목인 '폭력·가해행위'가 미국 사망의 14%입니다. 3년간 투자는 0.27억으로 전체 최소인데 발생가능성은 가장 높습니다. 해외사업장 표준에 이 항목이 빠져 있다면, 한국 기준을 그대로 적용한 것이 문제입니다.",
     },
     {
-      id: 2,
-      title: "보안·외곽: 한국엔 거의 없는 '폭력·가해행위' 리스크(14%)",
-      legal: "OSHA General Duty Clause 5(a)(1) — 직장폭력 예방 의무",
-      detail:
-        "미국 치명재해의 14%가 폭력·가해행위(살인 포함). 한국 안전관리에는 없는 항목이라 해외사업장 표준에 반드시 추가해야 함. 외곽·야간 단독작업 구역의 출입통제·CCTV·비상알람이 관리점.",
-      color: "amber",
+      id: 2, color: "amber",
+      title: "구내 운반·트럭 — 투자 2.4억인데 Risk Index 여전히 1위",
+      sub: "3년 투자 2.4억 · Risk Index 65",
+      body: "구내 운반·트럭 운수사고는 가장 많이 투자(2.4억)했지만 Risk Index가 여전히 65입니다. 한국 고소작업장과 같은 패턴입니다 — 투자 방향을 속도제어·동선 분리·자동정지 시스템으로 전환해야 효과가 납니다.",
     },
     {
-      id: 3,
-      title: "유해물질 노출 비중(15.5%)이 한국보다 높음 — 화학 취급 강화",
-      legal: "OSHA Hazard Communication / PSM 1910.119",
-      detail:
-        "미국은 유해물질 노출이 15.5%로 한국(상대적으로 낮음)보다 큰 비중. 화학물질 목록(SDS)·노출기준·공정안전관리(PSM) 데이터를 Hazard 마스터에 별도 반영해야 Risk Index가 현실을 반영.",
-      color: "blue",
-    },
-    {
-      id: 4,
-      title: "국가별 분포 차이를 무시한 '한국 표준 일괄적용'의 위험",
-      legal: "현지법(OSH Act) vs 본사 표준 — 이중 기준 정합성",
-      detail:
-        "한국 기준(떨어짐·끼임 중심)을 해외에 그대로 적용하면 운수·폭력 리스크를 놓침. 국가별 재해유형 분포에 따라 Hazard 마스터 가중치를 다르게 설정하는 ALARP 모델이 계열사 글로벌 확산의 핵심.",
-      color: "purple",
+      id: 3, color: "blue",
+      title: "유해물질 노출 15.5% — 한국보다 높고, 관리 기준이 다르다",
+      sub: "OSHA HazCom · PSM 의무",
+      body: "미국의 유해물질 노출 치명재해 비중은 15.5%로 한국보다 높습니다. 미국은 SDS·PEL·PSM 등 한국과 다른 기준 체계를 씁니다. 해외사업장 Risk Index에 이 현지 기준을 반영하지 않으면 정확한 우선순위를 낼 수 없습니다.",
     },
   ],
 };
 
 const strategyPillars = [
-  {
-    icon: Database,
-    title: "Data 통합",
-    sub: "분산 데이터 단일 체계화",
-    body: "Near-Miss, 정기점검, 설비 센서, 작업환경측정 데이터를 단일 Data Mart로 통합. SK하이닉스 SPC/VM 구축 경험과 동일한 Pipeline 설계 적용.",
-  },
-  {
-    icon: Search,
-    title: "위험 예지",
-    sub: "패턴 기반 사전 알람",
-    body: "공정·구역별 Near-Miss 빈도×심각도 매트릭스로 우선관리 구역 도출. 반복 패턴 발생 시 자동 알람 체계 구축.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "법규 연계",
-    sub: "중대재해처벌법 4대 의무 매핑",
-    body: "위험성평가-안전보건관리체계-개선절차-재발방지 각 의무 항목을 데이터 흐름과 1:1 매핑하여 경영책임자 보고 체계 자동화.",
-  },
-  {
-    icon: TrendingUp,
-    title: "확산·표준화",
-    sub: "계열사 Rollout 모델",
-    body: "Pilot 적용 후 표준 프로세스·대시보드 템플릿화하여 관계사 전파. 선진사 벤치마킹 기반 고도화 로드맵 제시.",
-  },
+  { icon: Database, title: "데이터 통합 기반 구축", sub: "분산 데이터 → 단일 체계",
+    body: "사고·설비·인사·법규 데이터를 하나의 체계로 묶어 Risk Index를 실시간 산출합니다. 근본원인 추적이 가능한 데이터 계보를 확보합니다." },
+  { icon: Search, title: "선제 감지·예방", sub: "이상 신호 → 조치",
+    body: "센서·IoT 데이터로 이상 신호를 사고 이전에 포착합니다. AI 예측 모델을 통해 사고 발생 패턴을 학습하고 선제 개입 시점을 앞당깁니다." },
+  { icon: ShieldCheck, title: "법규 내재화", sub: "중대재해법 4대 의무 증빙",
+    body: "위험성평가·관리체계·개선절차·재발방지 각 의무를 데이터 흐름에 1:1 매핑합니다. 경영책임자 보고 및 법적 증빙이 자동화됩니다." },
+  { icon: TrendingUp, title: "관계사 확산", sub: "Pilot → 그룹 표준",
+    body: "한 사업장에서 검증한 모델을 패키지화해 관계사로 전파합니다. 사업군별 특성에 맞게 기준위험도와 Limit을 조정해 적용합니다." },
 ];
 
+// 핵심 과제 — 4M(Man/Machine/Method/Monitoring) + 근본원인 → 해결 유형
 const initiatives = [
   {
     rank: 1,
-    title: "고소작업장 '떨어짐' 방지 IoT 알람 Pilot",
-    scope: "고소작업장 / 프레스라인",
-    roi: "상",
-    urgency: "상",
-    period: "3개월",
-    desc: "안전대 미체결·위험구역 진입 감지 센서 부착, 임계치 초과 시 실시간 알람. ETCH 공정 EPD(End Point Detection) 설계 경험 적용. Cost 대비 Risk Index 감소폭이 가장 큰 구역 우선.",
+    title: "프레스·기계라인 협착 방호 즉시 강화",
+    headline: "설비가 문제다 — Machine 관점 즉시 개선",
+    root: "협착 방호 장치 설계 부재(Machine) + 방호 표준 미정립(Method)",
+    solution: "설비(Machine): 라이트커튼·이중 방호 설치\nMethod: 작업 표준 SOP 재정립",
+    type: "설비개조 + 프로세스",
+    roi: "상", urgency: "상",
+    period: "0~3개월",
+    color: "coral",
   },
   {
     rank: 2,
-    title: "저빈도·고심각도 구역 우선관리 스코어링 모델",
-    scope: "도장·건조로 / 자재 적치구역",
-    roi: "상",
-    urgency: "상",
-    period: "2개월",
-    desc: "빈도뿐 아니라 심각도·법적 가중치를 반영한 우선순위 스코어링 모델 개발. 화재·폭발 등 저빈도 특이점을 ALARP 판정에 자동 반영, 점검 주기 차등화 제안.",
+    title: "고소작업장 감지 방식 전환 — 투자 방향 재설계",
+    headline: "투자 방향이 잘못됐다 — 사후 장치 → 사전 감지",
+    root: "추락방지 설계 치우침(Machine) + 동선·착용 점검 부재(Management)",
+    solution: "Monitoring: 스마트 안전모·동선 센서 도입\nMan: 착용 의무화 교육·패널티 체계",
+    type: "센싱 + 교육",
+    roi: "상", urgency: "중",
+    period: "3~6개월",
+    color: "amber",
   },
   {
     rank: 3,
-    title: "Hazard·Event 통합 Data Mart 및 법규 의무 대시보드",
-    scope: "전사",
-    roi: "중",
-    urgency: "중",
-    period: "4개월",
-    desc: "분산된 3개 오브젝트(Hazard/Event/Cost) 통합 Pipeline 구축 (Airflow/PySpark). Risk Index 실시간 산출 + 경영책임자용 중대재해법 의무 이행 대시보드 자동화.",
+    title: "질병 고위험군 조기 식별 체계 구축",
+    headline: "사고 너머 60%를 잡는다 — 질병 데이터 관리",
+    root: "인사·건강검진 데이터 단절(Management) + 고령·소규모 모니터링 부재",
+    solution: "Method: 연령·근무기간·질환이력 통합 스크리닝\nMan: 고위험군 정기 관리 프로세스",
+    type: "프로세스 + 데이터",
+    roi: "중", urgency: "중",
+    period: "3~9개월",
+    color: "blue",
   },
   {
     rank: 4,
-    title: "ALARP 기반 투자 의사결정 모델 및 표준 Rollout 패키지",
-    scope: "Pilot 사업장 → 계열사 확산",
-    roi: "중",
-    urgency: "하",
-    period: "3개월",
-    desc: "Cost×Risk×Limit 교차 최적화 모델 고도화. Pilot 결과 기반 표준 프로세스·대시보드 템플릿 패키지화하여 관계사 전파 — 채용사 본연의 '계열사 컨설팅·확산' 역할과 직결.",
+    title: "AI 예측 플랫폼 구축 + 관계사 확산",
+    headline: "데이터가 쌓이면, AI가 사고를 예측한다",
+    root: "데이터 분산·연계 부재 → 패턴 학습 불가(전사 구조 문제)",
+    solution: "Monitoring: 센서·설비·사고 데이터 통합 플랫폼\nMethod: 시뮬레이션으로 사고 케이스 확장 → 예측 모델",
+    type: "플랫폼 + AI",
+    roi: "중", urgency: "하",
+    period: "6~24개월",
+    color: "purple",
   },
 ];
 
-const roadmap = [
-  { phase: "1단계 (1-2개월)", title: "데이터 진단 및 통합", items: ["Hazard·Event·Cost 데이터 소스 인벤토리", "3개 오브젝트 연계 설계 및 Risk Index 산식 정의", "ALARP 기준선 초안 작성"] },
-  { phase: "2단계 (3-4개월)", title: "Pilot 구축", items: ["고위험 2개 구역 IoT 알람 Pilot", "우선관리 스코어링 모델 적용", "법규 의무 매핑 대시보드 v1"] },
-  { phase: "3단계 (5-7개월)", title: "검증 및 고도화", items: ["Pilot 효과 검증 (Near-Miss 감소율)", "예측 모델 정교화", "현장 피드백 반영 개선"] },
-  { phase: "4단계 (8-10개월)", title: "표준화 및 확산", items: ["표준 프로세스·템플릿 패키지화", "관계사 대상 기술 컨설팅", "단계적 Rollout 및 운영 이관"] },
+// 로드맵 — ROI × 시급성 2×2 매트릭스 기반 3단계
+const roadmapMatrix = {
+  q1: { label: "즉시 실행", axis: "시급성↑ · ROI↑", desc: "빠르게 효과를 내는 퀵윈", color: "coral",
+    items: ["프레스·기계라인 라이트커튼 즉시 설치", "협착 방호 SOP 재정립", "고소작업장 감지 방식 전환 착수"] },
+  q2: { label: "전략 과제", axis: "시급성↓ · ROI↑", desc: "길게 보고 단계적으로", color: "blue",
+    items: ["센서 데이터 수집 인프라 구축", "사고 데이터 통합 플랫폼 개발", "시뮬레이션·AI 예측 모델 학습"] },
+  q3: { label: "단기 보완", axis: "시급성↑ · ROI↓", desc: "법적 의무·리스크 완화", color: "amber",
+    items: ["질병 고위험군 스크리닝 프로세스", "법규 의무 이행 증빙 체계", "업무상질병 모니터링 도입"] },
+  q4: { label: "순차 검토", axis: "시급성↓ · ROI↓", desc: "리소스 여력 있을 때", color: "gray",
+    items: ["기타 구역 ALARP 재산정", "관계사 전파 패키지 표준화"] },
+};
+const roadmapPhases = [
+  { phase: "Phase 1 · 즉시(0~6개월)", title: "퀵윈 — 가장 급한 불 먼저",
+    color: "coral", badge: "ROI 상 · 시급성 상",
+    items: ["프레스·기계라인 라이트커튼 설치 및 SOP 재정립", "고소작업장 스마트 안전모 Pilot 도입", "질병 고위험군 스크리닝 프로세스 가동"] },
+  { phase: "Phase 2 · 단기(6~18개월)", title: "기반 — 데이터를 모으고 연결한다",
+    color: "amber", badge: "ROI 상 · 시급성 중",
+    items: ["센서·설비·사고 데이터 통합 플랫폼 구축", "Risk Index 실시간 대시보드", "법규 의무 자동 증빙 체계 구축"] },
+  { phase: "Phase 3 · 전략(18~36개월)", title: "AI 예측 + 관계사 확산",
+    color: "blue", badge: "ROI 중 · 시급성 하 → 장기 ROI 최대",
+    items: ["시뮬레이션으로 희소 사고 케이스 Scale-up", "AI 예측 모델 학습·정합성 고도화", "Pilot 결과 패키지화 → 관계사 순차 전파"] },
 ];
 
 // ------------------------------------------------------------
@@ -807,44 +764,42 @@ function FlowStep({ n, label, icon: Icon, last }) {
 
 function IntroStage({ go }) {
   const points = [
-    { icon: Database, color: "blue", title: "1. 데이터로 현황 진단",
-      body: "내부(센서·설비·장비·인사)와 외부(중대재해 법규·타사/해외 사례)를 모두 활용. 내·외부 데이터를 사건·사람·근본원인 관점으로 묶어 데이터화하고 분석합니다." },
-    { icon: Compass, color: "purple", title: "2. Top-down·Bottom-up 전략 Framework",
-      body: "Top-down은 삼성 그룹 사업 분류와 각 사업의 전략적 방향성을 기준으로, Bottom-up은 데이터 진단으로 예측되는 중대재해 분류의 영향 관계사를 묶어 구성합니다. 두 축의 교차점에서 Theme별 전략과 우선순위를 도출합니다." },
-    { icon: BarChart3, color: "coral", title: "3. 과제 기획 → 구축 → 운영",
-      body: "전략을 과제로 기획하고 로드맵으로 방향을 조망합니다. 운영 지표·재무 지표를 KPI로 관리해 각 관계사에 기획·구축까지 이어집니다." },
+    { icon: Database, color: "blue", title: "현황을 데이터로 진단",
+      body: "내부(센서·설비·인사)와 외부(법규·타사·해외) 데이터를 사건·사람·근본원인으로 통합." },
+    { icon: Compass, color: "purple", title: "Top-down·Bottom-up 전략",
+      body: "그룹 사업방향과 데이터가 가리키는 위험을 교차해 관계사별 Theme 전략 도출." },
+    { icon: BarChart3, color: "coral", title: "과제·로드맵·KPI로 실행",
+      body: "근본원인 제거 과제를 우선순위화하고 운영·재무 KPI로 관계사 확산까지 관리." },
   ];
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Hero */}
-      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "18px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 11, letterSpacing: 1.2, color: "#9FCBB8", fontWeight: 600 }}>
-          SMART SAFETY STRATEGY · DEMO
+      {/* Hero — 임원 대상 결론 우선 */}
+      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "20px 18px", color: "#fff" }}>
+        <div style={{ fontSize: 11, letterSpacing: 1.2, color: "#9FCBB8", fontWeight: 700 }}>
+          EHS × AX — 그룹 안전 데이터 전환
         </div>
-        <div style={{ fontSize: 18, fontWeight: 700, marginTop: 6, lineHeight: 1.4 }}>
-          데이터로 진단하고, 전략을 세우고,<br />관계사에 기획·구축까지
+        <div style={{ fontSize: 21, fontWeight: 800, marginTop: 8, lineHeight: 1.35, letterSpacing: -0.4 }}>
+          중대재해 0,<br />데이터로 먼저 찾아 막는다
         </div>
-        <p style={{ fontSize: 12.5, color: "#CFE9DE", lineHeight: 1.7, margin: "10px 0 0" }}>
-          삼성EHS전략연구소에서 일한다면 <Term k="중대재해처벌법">중대재해</Term> 0을 향해
-          어떻게 일할지를 담은 샘플입니다. 현황 진단 → 전략 → 과제 기획 → 로드맵 → 관계사
-          기획·구축까지 <b>업무 전체 흐름</b>을 보여줍니다.
+        <p style={{ fontSize: 13, color: "#CFE9DE", lineHeight: 1.7, margin: "12px 0 0" }}>
+          흩어진 안전 데이터를 하나로 연결해 사고가 나기 전에 위험을 짚고,
+          관계사별 전략·과제로 실행하는 체계입니다.
         </p>
       </div>
 
       {/* Flow */}
       <Card>
-        <SectionLabel>업무 전체 흐름</SectionLabel>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-          marginTop: 6, overflowX: "auto", paddingBottom: 4 }}>
-          <FlowStep n={1} label="데이터 진단" icon={Database} />
-          <FlowStep n={2} label="전략 방향" icon={Compass} />
-          <FlowStep n={3} label="과제 기획" icon={Layers} />
+          overflowX: "auto", paddingBottom: 4 }}>
+          <FlowStep n={1} label="진단" icon={Database} />
+          <FlowStep n={2} label="전략" icon={Compass} />
+          <FlowStep n={3} label="과제" icon={Layers} />
           <FlowStep n={4} label="로드맵" icon={Map} />
-          <FlowStep n={5} label="기획·구축" icon={CheckCircle2} last />
+          <FlowStep n={5} label="구축·확산" icon={CheckCircle2} last />
         </div>
       </Card>
 
-      {/* 3 core points */}
+      {/* 3 core points — 압축 */}
       {points.map((p, i) => {
         const c = colorMap[p.color];
         const Icon = p.icon;
@@ -856,29 +811,21 @@ function IntroStage({ go }) {
             </div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1B1B18" }}>{p.title}</div>
-              <p style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.6, margin: "5px 0 0" }}>{p.body}</p>
+              <p style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.6, margin: "4px 0 0" }}>{p.body}</p>
             </div>
           </Card>
         );
       })}
 
-      {/* How to use */}
-      <Card style={{ background: "#E1F5EE", border: "none" }}>
-        <SectionLabel>보는 방법</SectionLabel>
-        <ul style={{ margin: "4px 0 0", paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: "#04342C" }}>
-          <li>화면을 <b>좌우로 스와이프</b>하거나 상단 <b>탭 이름</b>을 눌러 이동</li>
-          <li>상단 우측 <b>국기</b>로 🇰🇷국내 / 🇺🇸해외 데이터 전환</li>
-          <li><span style={{ color: COLORS.teal, fontWeight: 600, borderBottom: `1px dotted ${COLORS.teal}` }}>밑줄 친 용어</span>나 수식을 누르면 뜻이 나옵니다</li>
-          <li>데이터 출처·계보는 <b>데이터 상세</b> 탭에서 확인</li>
-        </ul>
-      </Card>
-
       <button onClick={() => go(1)}
         style={{ border: "none", borderRadius: 12, padding: "14px", background: COLORS.navy, color: "#fff",
           fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center",
           justifyContent: "center", gap: 6 }}>
-        데이터 분석부터 시작하기 <ArrowRight size={16} />
+        진단 결과 보기 <ArrowRight size={16} />
       </button>
+      <div style={{ fontSize: 10.5, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>
+        좌우로 넘기며 보세요 · 국기로 국내/해외 전환 · 밑줄 용어는 탭하면 설명
+      </div>
     </div>
   );
 }
@@ -934,238 +881,161 @@ function fmtNum(n) {
   return n.toLocaleString();
 }
 
+// 임원용 결론-우선 헤드라인: 큰 한 문장 + 얇은 보조선
+function StageLede({ kicker, headline, sub }) {
+  return (
+    <div style={{ margin: "2px 0 4px" }}>
+      {kicker && (
+        <div style={{ fontSize: 10.5, letterSpacing: 1, fontWeight: 700, color: COLORS.teal, marginBottom: 6 }}>
+          {kicker}
+        </div>
+      )}
+      <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.navy, lineHeight: 1.35, letterSpacing: -0.3 }}>
+        {headline}
+      </div>
+      {sub && (
+        <div style={{ fontSize: 12.5, color: COLORS.textMuted, lineHeight: 1.6, marginTop: 6 }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DataStage({ ds }) {
-  const totalCost = ds.cost.reduce((s, d) => s + d.cost, 0);
   const bp = ds.bigPicture;
+  const top2 = ds.riskItems.slice(0, 2);
 
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
-      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        목표는 <b>중대재해 0</b>입니다. 사고는 대개 조치가 있었음에도 발생하는 것이 아니라,
-        지켜야 할 법규·기준이 누락되거나 조치 자체가 없을 때 발생합니다. 따라서 무엇을
-        놓치고 있는지 데이터로 먼저 찾아 선제적으로 개선해야 합니다. 이를 위해
-        <b>① <Term k="Risk Index">Risk Index</Term>(위험도 지수) · ② Cost(개선투자) · ③
-        Limit(운영기준선·<Term k="ALARP">ALARP</Term>)</b> 3가지 관점으로 분석합니다.
-      </p>
+      <StageLede
+        kicker="현황 진단"
+        headline={ds.key === "korea"
+          ? "끼임이 1위, 고소작업장은 투자 대비 효과가 없다"
+          : "운수사고 1위, 폭력 리스크는 한국 표준에 없는 공백"}
+        sub={`${ds.label} 제조업 사망 데이터로 Risk Index를 산출했습니다. 기준위험도 × 발생가능성 두 축으로 우선순위를 가립니다.`}
+      />
 
-      <div
-        style={{
-          background: "#E1F5EE",
-          borderRadius: 12,
-          padding: "10px 12px",
-          fontSize: 11.5,
-          color: "#04342C",
-          lineHeight: 1.6,
-        }}
-      >
-        <b>분석 대상</b> {ds.site.name}{ds.site.workers > 0 ? ` · 상시근로자 ${ds.site.workers}명` : ""}<br />
-        <b>적용 법규</b> {ds.law}<br />
-        <b>기준 데이터</b> {ds.source} (Cost·Limit은 내부 가상 데이터)
-      </div>
-
-      {/* 내부·외부 데이터 관점 (K1) */}
+      {/* 큰 그림 */}
       <Card>
-        <SectionLabel>데이터 관점 — 외부 + 내부를 하나로</SectionLabel>
-        <div style={{ display: "flex", gap: 8 }}>
-          <div style={{ flex: 1, background: "#E6F1FB", borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#042C53" }}>외부 데이터</div>
-            <div style={{ fontSize: 11, color: "#345", lineHeight: 1.6, marginTop: 4 }}>
-              중대재해 법규 · 타사 사례 · 해외 사례 리서치
-            </div>
-          </div>
-          <div style={{ flex: 1, background: "#EEEDFE", borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#26215C" }}>내부 데이터</div>
-            <div style={{ fontSize: 11, color: "#443", lineHeight: 1.6, marginTop: 4 }}>
-              센서 · 설비 · 장비 · 인사정보 등 수집 가능한 데이터
-            </div>
-          </div>
-        </div>
-        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
-          두 데이터를 <b>사건·사람·근본원인</b> 관점으로 묶어 데이터화합니다(계보는 '데이터 상세' 탭).
-          아래는 그 분석을 <Term k="Risk Index">Risk Index</Term>·Cost·Limit 3관점으로 본 결과입니다.
-        </p>
-      </Card>
-
-      {/* 큰 그림 — 전체 규모 통계 */}
-      <Card>
-        <ObjectBadge color="gray">큰 그림 — {bp.scopeLabel} · {bp.year}</ObjectBadge>
-        <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-          <StatTile value={fmtNum(bp.injured)} label="재해자(부상 등)" sub="명" color={COLORS.navy2} />
-          <StatTile value={fmtNum(bp.accidentFatal)} label="사고 사망" sub="명" color={COLORS.coral} />
+        <ObjectBadge color="gray">큰 그림 — {bp.scopeLabel}</ObjectBadge>
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          <StatTile value={fmtNum(bp.accidentFatal)} label="사고성 사망" sub="명" color={COLORS.coral} />
           <StatTile value={fmtNum(bp.fatal)} label="전체 사망" sub="명" color="#8A2C12" />
+          <StatTile value={ds.key === "korea" ? "60.7%" : "36.8%"}
+            label={ds.key === "korea" ? "질병 비중" : "운수사고 비중"} sub="" color={COLORS.navy2} />
         </div>
-        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
-          {bp.note}
-        </p>
-        <SourceBadge
-          real={true}
+        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>{bp.note}</p>
+        <SourceBadge real={true}
           label={ds.key === "korea" ? "KOSHA 마이크로데이터" : "美 BLS CFOI 2023"}
-          detail={ds.source + " — 통합 데이터셋 전체 속성 중 큰그림(규모/연도/발생형태)에 쓰인 속성만 음영."}
-          cols={ATTR_ALL}
-          active={attrIdx("victim_id","발생형태","연도","종업종","규모","연령","질병종류")}
-          rows={[ATTR_SAMPLE]}
-        />
+          detail={ds.source}
+          cols={ATTR_ALL} active={attrIdx("victim_id","발생형태","연도","종업종","규모","연령","질병종류")} rows={[ATTR_SAMPLE]} />
       </Card>
 
-      {/* 재해유형 분포 — Hazard Master 근거 */}
+      {/* Risk Index 산출 로직 */}
       <Card>
-        <ObjectBadge color="gray">기준 — {ds.label} 재해유형 분포</ObjectBadge>
-        <SectionLabel>치명재해 유형별 비중 (%)</SectionLabel>
-        <div style={{ width: "100%", height: 190 }}>
-          <ResponsiveContainer>
-            <BarChart
-              data={ds.hazardShare}
-              layout="vertical"
-              margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#EEEBE3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10, fill: COLORS.textMuted }} domain={[0, 40]} unit="%" />
-              <YAxis
-                type="category"
-                dataKey="type"
-                tick={{ fontSize: 10, fill: "#1B1B18" }}
-                width={92}
-              />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => [`${v}%`, "비중"]} />
-              <Bar dataKey="share" fill={COLORS.navy2} radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <ObjectBadge color="purple">Risk Index 산출 로직</ObjectBadge>
+        <div style={{ background: COLORS.navy, borderRadius: 10, padding: "10px 14px", margin: "6px 0 10px" }}>
+          <div style={{ fontSize: 11, color: "#9FCBB8", fontWeight: 700, marginBottom: 6 }}>산식</div>
+          <div style={{ fontSize: 12, color: "#EAF3EF", lineHeight: 1.8, fontFamily: "ui-monospace,Menlo,monospace" }}>
+            기준위험도 = 해당 항목 사고건수 / 전체 사고건수 × 100<br />
+            발생가능성 = 3년 사고건수 / 3년 투자비용(억원)<br />
+            <span style={{ color: "#FFD9A0", fontWeight: 700 }}>
+              Risk Index = 기준위험도 × 0.6 + 발생가능성 × 0.4
+            </span>
+          </div>
         </div>
-        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
-          {ds.topNote}
-        </p>
-        <SourceBadge
-          real={true}
-          label={ds.key === "korea" ? "KOSHA 실집계(사고성)" : "美 BLS CFOI 2023"}
-          detail={ds.key === "korea"
-            ? "제조업 사망 마이크로데이터 4,374명 중 사고성 1,717명을 발생형태로 집계한 비중"
-            : "美 노동통계국 치명재해(CFOI) event/exposure 분포 5,283건"}
-          cols={ATTR_ALL}
-          active={attrIdx("발생형태","현상")}
-          rows={[ATTR_SAMPLE]}
-        />
-      </Card>
-
-      {/* ① Cost */}
-      <Card>
-        <ObjectBadge color="blue">오브젝트 ① Cost — 예방투자 비용</ObjectBadge>
-        <SectionLabel>구역별 예방투자 비용 (만원)</SectionLabel>
-        <div style={{ width: "100%", height: 190 }}>
+        <SectionLabel>항목별 Risk Index (높을수록 우선)</SectionLabel>
+        <div style={{ width: "100%", height: 200 }}>
           <ResponsiveContainer>
-            <BarChart data={ds.cost} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <BarChart data={[...ds.riskItems].sort((a,b)=>b.index-a.index)}
+              margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#EEEBE3" vertical={false} />
-              <XAxis
-                dataKey="area"
-                tick={{ fontSize: 10, fill: COLORS.textMuted }}
-                interval={0}
-                angle={-25}
-                textAnchor="end"
-                height={50}
-              />
-              <YAxis tick={{ fontSize: 10, fill: COLORS.textMuted }} />
-              <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                formatter={(v) => [`${v.toLocaleString()}만원`, "투자비용"]}
-              />
-              <Bar dataKey="cost" fill={COLORS.blue} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div
-          style={{
-            marginTop: 8,
-            background: "#E6F1FB",
-            borderRadius: 10,
-            padding: "8px 10px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ fontSize: 12, color: "#042C53", fontWeight: 500 }}>전체 예방투자 합계</span>
-          <span style={{ fontSize: 15, color: "#042C53", fontWeight: 700 }}>
-            {totalCost.toLocaleString()}만원
-          </span>
-        </div>
-        <SourceBadge
-          real={false}
-          label="구역별 예방투자 비용"
-          detail="사업장 내부 운영 데이터(영업비밀) 성격이라 시연용 가상 단가로 산출. 실제는 견적·자산대장으로 대체."
-          cols={ATTR_ALL}
-          active={attrIdx("root_cause_id","Cost")}
-          rows={[ATTR_SAMPLE]}
-        />
-      </Card>
-
-      {/* ② Risk Index */}
-      <Card>
-        <ObjectBadge color="purple">오브젝트 ② Risk Index — 위험도 지수</ObjectBadge>
-        <SectionLabel>Hazard(기준위험도) + Event(발생추세) = 종합 위험도 지수</SectionLabel>
-        <div style={{ width: "100%", height: 190 }}>
-          <ResponsiveContainer>
-            <BarChart data={ds.riskIndex} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EEEBE3" vertical={false} />
-              <XAxis
-                dataKey="area"
-                tick={{ fontSize: 10, fill: COLORS.textMuted }}
-                interval={0}
-                angle={-25}
-                textAnchor="end"
-                height={50}
-              />
+              <XAxis dataKey="area" tick={{ fontSize: 9.5, fill: COLORS.textMuted }}
+                interval={0} angle={-22} textAnchor="end" height={52} />
               <YAxis tick={{ fontSize: 10, fill: COLORS.textMuted }} domain={[0, 110]} />
-              <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                formatter={(v, n) => [v, n === "master" ? "기준위험도(Master)" : "발생추세 가중(Event)"]}
-              />
-              <Bar dataKey="master" stackId="idx" fill={COLORS.navy2} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="event" stackId="idx" fill={COLORS.purple} radius={[4, 4, 0, 0]} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                formatter={(v, n) => [v, n === "baseNorm" ? "기준위험도" : "발생가능성"]} />
+              <Bar dataKey="baseNorm" stackId="r" fill={COLORS.navy2} />
+              <Bar dataKey="occNorm" stackId="r" fill={COLORS.purple} radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
-          <Legend swatch={COLORS.navy2} label="기준위험도 (Hazard Master)" />
-          <Legend swatch={COLORS.purple} label="발생추세 가중 (Event Log)" />
+        <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+          <Legend swatch={COLORS.navy2} label="기준위험도" />
+          <Legend swatch={COLORS.purple} label="발생가능성" />
         </div>
-        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "8px 0 0" }}>
-          {ds.riskIndex[0].area}은(는) '{ds.riskIndex[0].hazard}'({ds.label} 1위 유형) 기준위험도가
-          높고, 최근 발생추세 가중까지 더해져 종합 지수 1위 — ②에서 ④까지 일관된 패턴.
-        </p>
-        <SourceBadge
-          real={false}
-          label="Hazard Master(실데이터 파생) + Event(가상)"
-          detail="기준위험도(Hazard Master)는 실제 발생형태 분포를 0~70 정규화한 파생값이고, Event 가중과 구역 매핑은 시연용 가상값."
-          cols={ATTR_ALL}
-          active={attrIdx("발생형태","근본원인","6M","RiskIndex")}
-          rows={[ATTR_SAMPLE]}
-        />
+        <SourceBadge real={false}
+          label="Risk Index(기준위험도=실, 발생가능성=가상 투자비 기반)"
+          detail="기준위험도: KOSHA 실집계 비중 기반. 발생가능성: 3년사고건수/3년투자비용(가상). 두 값 모두 0~100 정규화."
+          cols={ATTR_ALL} active={attrIdx("발생형태","RiskIndex")} rows={[ATTR_SAMPLE]} />
       </Card>
 
-      {/* ③ Limit / ALARP */}
+      {/* 연도별 투자비용 */}
       <Card>
-        <ObjectBadge color="coral">오브젝트 ③ Limit — 운영기준선 (ALARP 검증)</ObjectBadge>
-        <SectionLabel>Cost × Risk Index 교차분석 — 어디까지 투자해야 안전한가</SectionLabel>
+        <ObjectBadge color="blue">연도별 항목별 투자비용 (만원, 가상)</ObjectBadge>
+        <div style={{ width: "100%", height: 200 }}>
+          <ResponsiveContainer>
+            <BarChart data={ds.annualCost.map(r=>({ area: r.area, ...Object.fromEntries([2021,2022,2023,2024,2025].map(y=>[y,r[`y${y}`]])) }))}
+              margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#EEEBE3" vertical={false} />
+              <XAxis dataKey="area" tick={{ fontSize: 9.5, fill: COLORS.textMuted }}
+                interval={0} angle={-22} textAnchor="end" height={52} />
+              <YAxis tick={{ fontSize: 10, fill: COLORS.textMuted }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                formatter={(v) => [`${v.toLocaleString()}만원`, "투자비용"]} />
+              {[2021,2022,2023,2024,2025].map((y,i)=>(
+                <Bar key={y} dataKey={y} fill={["#C5D8E8","#92B8D5","#5F97BF","#3075A8","#0E2A38"][i]}
+                  stackId="y" />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+          {[2021,2022,2023,2024,2025].map((y,i)=>(
+            <Legend key={y} swatch={["#C5D8E8","#92B8D5","#5F97BF","#3075A8","#0E2A38"][i]} label={String(y)} />
+          ))}
+        </div>
+        <SourceBadge real={false} label="연도별 투자비용(가상)"
+          detail="사업장 내부 운영 데이터 성격. 시연용 가상 수치이며 실제 견적·자산대장으로 대체됩니다."
+          cols={ATTR_ALL} active={attrIdx("Cost","연도")} rows={[ATTR_SAMPLE]} />
+      </Card>
+
+      {/* ALARP */}
+      <Card>
+        <ObjectBadge color="coral">Limit — Cost × Risk Index 교차 (ALARP)</ObjectBadge>
         <AlarpDiagram points={ds.alarp} />
         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-          <ZoneRow color="coral" label="Unacceptable (Index 75↑)" desc="비용과 무관하게 즉시 조치" />
-          <ZoneRow color="amber" label="ALARP (Index 30~75)" desc="비용 대비 효과를 따져 합리적 수준까지 개선" />
-          <ZoneRow color="blue" label="Broadly Acceptable (Index 30↓)" desc="현 수준 유지·모니터링" />
+          <ZoneRow color="coral" label="Unacceptable (Index 75↑)" desc="비용 불문 즉시 조치" />
+          <ZoneRow color="amber" label="ALARP (30~75)" desc="비용 대비 효과 따져 합리적 수준까지" />
+          <ZoneRow color="blue" label="Broadly Acceptable (30↓)" desc="현 수준 유지·모니터링" />
         </div>
-        <p style={{ fontSize: 11.5, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
-          점선은 <b>법적 최소 기준선(Index {LEGAL_MIN_INDEX})</b> — {ds.law} 체계에서는 "비용이
-          과도하다"는 이유만으로 조치를 면제하지 않으므로, 실제 Limit은 통계적 ALARP 기준과
-          법적 최소 기준 중 <b>더 엄격한 값</b>으로 설정합니다. 화학·반응공정은 Index상
-          기준선 아래지만 화재·폭발 심각도 특이점으로 별도 관리 대상입니다.
-        </p>
-        <SourceBadge
-          real={false}
-          label="ALARP 좌표(Cost×Index)"
-          detail="ALARP 영역 경계와 법적 최소선은 HSE 학술기준(실제) 기반이나, 구역별 Cost·Index 좌표는 시연용 가상값."
-          cols={ATTR_ALL}
-          active={attrIdx("root_cause_id","RiskIndex","Cost","Limit")}
-          rows={[ATTR_SAMPLE]}
-        />
+        <SourceBadge real={false} label="ALARP 좌표(Cost×Index)"
+          detail="ALARP 경계·법적 기준선은 HSE 학술 기준(실제). 구역별 좌표는 가상 투자비 기반."
+          cols={ATTR_ALL} active={attrIdx("root_cause_id","RiskIndex","Cost","Limit")} rows={[ATTR_SAMPLE]} />
       </Card>
+
+      {/* 종합 결론 */}
+      <div style={{ background: COLORS.navy, borderRadius: 12, padding: "14px 16px", color: "#fff" }}>
+        <div style={{ fontSize: 11, color: "#9FCBB8", fontWeight: 700, marginBottom: 8 }}>
+          📌 진단 결론 — 최우선 2개 이슈
+        </div>
+        {top2.map((r, i) => (
+          <div key={i} style={{ marginBottom: i < top2.length-1 ? 10 : 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              {i+1}. {r.area} ({r.type}) — Index {r.index}
+            </div>
+            <div style={{ fontSize: 11.5, color: "#CFE9DE", marginTop: 3, lineHeight: 1.6 }}>
+              {i === 0
+                ? `사고 1위 유형(기준위험도 100)인데 3년 투자는 ${(r.cost3y/10000).toFixed(1)}억으로 최소 → 즉시 투자 필요`
+                : `3년 투자 ${(r.cost3y/10000).toFixed(1)}억으로 최다지만 Index ${r.index} → 투자 방향 재검토 필요`}
+            </div>
+          </div>
+        ))}
+        <div style={{ fontSize: 11, color: "#9FCBB8", marginTop: 10, lineHeight: 1.6 }}>
+          {ds.topNote}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1323,63 +1193,54 @@ function Legend({ swatch, label }) {
 
 function IssueStage({ ds }) {
   const issues = issuesByRegion[ds.key];
-  const introLaw = ds.key === "korea" ? "중대재해처벌법 의무 항목" : "OSHA / 현지 안전법규";
+  const top2 = ds.riskItems.slice(0,2);
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
-      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        {ds.flag} {ds.label} 데이터 분석 결과를 <b>{introLaw}</b>과 연결하여, 단순 통계가 아닌
-        법적·경영 리스크 관점의 이슈로 재정의합니다.
-      </p>
-      {issues.map((iss) => {
+      <StageLede
+        kicker="위험 인사이트"
+        headline={ds.key === "korea"
+          ? "데이터가 가리키는 이슈는 명확하다"
+          : "한국 표준으론 잡히지 않는 리스크가 있다"}
+        sub="Risk Index 진단 결과를 두 가지 행동 관점으로 재정의합니다 — 즉시 투자 vs 방향 전환."
+      />
+      {issues.map((iss, i) => {
         const c = colorMap[iss.color];
+        const ri = top2[i];
         return (
           <Card key={iss.id}>
-            <div style={{ display: "flex", gap: 10 }}>
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  background: c.bg,
-                  color: c.fg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  flexShrink: 0,
-                }}
-              >
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, color: c.border, lineHeight: 1, flexShrink: 0 }}>
                 {iss.id}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>{iss.title}</div>
-                <div
-                  style={{
-                    display: "inline-block",
-                    marginTop: 6,
-                    fontSize: 10.5,
-                    fontWeight: 600,
-                    padding: "3px 8px",
-                    borderRadius: 6,
-                    background: c.bg,
-                    color: c.fg,
-                  }}
-                >
-                  {iss.legal}
-                </div>
-                <p style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.6, margin: "8px 0 0" }}>
-                  {iss.detail}
-                </p>
+              </span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{iss.title}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: c.fg, marginTop: 2 }}>{iss.sub}</div>
               </div>
             </div>
+            <p style={{ fontSize: 12.5, color: "#3A3933", lineHeight: 1.7, margin: "0 0 8px" }}>
+              {iss.body}
+            </p>
+            {ri && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, background: c.bg, color: c.fg, borderRadius: 6,
+                  padding: "3px 8px", fontWeight: 600 }}>Index {ri.index}</span>
+                <span style={{ fontSize: 11, background: "#F1EFE8", color: COLORS.textMuted,
+                  borderRadius: 6, padding: "3px 8px" }}>
+                  3년 사고 {ri.inc3y}건 · 투자 {(ri.cost3y/10000).toFixed(1)}억
+                </span>
+              </div>
+            )}
           </Card>
         );
       })}
+      <div style={{ background: COLORS.navy, borderRadius: 12, padding: "12px 14px", color: "#EAF3EF",
+        fontSize: 12, lineHeight: 1.7 }}>
+        <b style={{ color: "#9FCBB8" }}>→ 다음 탭</b>에서 이 이슈들을 4M Framework으로
+        근본원인을 규명하고 해결 방안을 도출합니다.
+      </div>
     </div>
   );
 }
-
 // ------------------------------------------------------------
 // Stage 3: Strategy
 // ------------------------------------------------------------
@@ -1392,12 +1253,11 @@ function StrategyStage() {
   ];
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
-      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        전략은 <b>Top-down</b>과 <b>Bottom-up</b>을 동시에 고려해 수립합니다. 하향식으로
-        그룹 차원의 방향성을 정렬하고, 상향식으로 데이터가 가리키는 실제 위험을 반영해,
-        두 축이 만나는 지점에서 Theme별 전략과 우선순위를 도출합니다.
-      </p>
-
+      <StageLede
+        kicker="전략 방향"
+        headline="그룹 방향과 데이터, 두 축이 만나는 곳에 전략이 있다"
+        sub="Top-down(사업방향) × Bottom-up(데이터 위험)으로 관계사별 Theme 전략을 도출합니다."
+      />
       <Card>
         <SectionLabel>전략 수립 Framework — 양방향 접근</SectionLabel>
         <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
@@ -1494,74 +1354,73 @@ function StrategyStage() {
 // ------------------------------------------------------------
 
 function InitiativeStage() {
-  const radarData = initiatives.map((it) => ({
-    subject: `과제 ${it.rank}`,
-    ROI: it.roi === "상" ? 3 : it.roi === "중" ? 2 : 1,
-    긴급도: it.urgency === "상" ? 3 : it.urgency === "중" ? 2 : 1,
-  }));
-
+  const m4 = [
+    { m: "Man", label: "사람·교육", color: "blue", desc: "교육 부족, 숙련도, 절차 미준수" },
+    { m: "Machine", label: "설비·장비", color: "coral", desc: "방호 설계, 노후화, 정비 부재" },
+    { m: "Method", label: "프로세스", color: "amber", desc: "작업 표준, SOP, 관리 체계" },
+    { m: "Monitoring", label: "감지·측정", color: "purple", desc: "센서, 데이터, 이상 감지 체계" },
+  ];
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
-      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        전략을 실행 가능한 과제로 기획합니다. 방법론은 <b>근본원인 → 대책 → 기대효과</b>를
-        한 장으로 정의(과제기획서)하고, <b>ROI · 시급성</b> 기준으로 우선순위를 부여하는 방식입니다.
-      </p>
+      <StageLede
+        kicker="핵심 과제"
+        headline="근본원인을 규명하고, 해결 유형을 고른다"
+        sub="4M(Man·Machine·Method·Monitoring)으로 원인을 분류하고 어떤 수단으로 해결할지 정합니다."
+      />
 
+      {/* 4M Framework */}
       <Card>
-        <SectionLabel>과제별 ROI · 긴급도 비교</SectionLabel>
-        <div style={{ width: "100%", height: 200 }}>
-          <ResponsiveContainer>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="#EEEBE3" />
-              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: COLORS.textMuted }} />
-              <PolarRadiusAxis domain={[0, 3]} tick={false} axisLine={false} />
-              <Radar name="ROI" dataKey="ROI" stroke={COLORS.navy2} fill={COLORS.navy2} fillOpacity={0.25} />
-              <Radar name="긴급도" dataKey="긴급도" stroke={COLORS.coral} fill={COLORS.coral} fillOpacity={0.2} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
-          <Legend swatch={COLORS.navy2} label="ROI" />
-          <Legend swatch={COLORS.coral} label="긴급도" />
+        <SectionLabel>4M Framework — 근본원인 분류 체계</SectionLabel>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+          {m4.map((m) => {
+            const c = colorMap[m.color];
+            return (
+              <div key={m.m} style={{ flex: "1 1 42%", background: c.bg, borderRadius: 10,
+                padding: "8px 10px", border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: c.fg }}>{m.m}</div>
+                <div style={{ fontSize: 10.5, color: c.fg, opacity: 0.8, marginTop: 1 }}>{m.label}</div>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 3, lineHeight: 1.5 }}>{m.desc}</div>
+              </div>
+            );
+          })}
         </div>
       </Card>
 
-      {initiatives.map((it) => (
-        <Card key={it.rank}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", gap: 10 }}>
-              <div
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: "50%",
-                  background: it.rank === 1 ? COLORS.teal : "#EFEDE5",
-                  color: it.rank === 1 ? "#fff" : COLORS.navy,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                }}
-              >
+      {/* 과제 카드 */}
+      {initiatives.map((it) => {
+        const c = colorMap[it.color];
+        return (
+          <Card key={it.rank}>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: c.border, lineHeight: 1, flexShrink: 0 }}>
                 {it.rank}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.35 }}>{it.headline}</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>{it.title}</div>
               </div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.4 }}>{it.title}</div>
             </div>
-          </div>
-          <div style={{ display: "flex", gap: 6, marginTop: 8, marginLeft: 36, flexWrap: "wrap" }}>
-            <Tag label={`적용범위: ${it.scope}`} />
-            <Tag label={`ROI ${it.roi}`} />
-            <Tag label={`시급성 ${it.urgency}`} />
-            <Tag label={`기간 ${it.period}`} />
-          </div>
-          <p style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.6, margin: "8px 0 0 36px" }}>
-            {it.desc}
-          </p>
-        </Card>
-      ))}
+            <div style={{ margin: "10px 0 6px", padding: "8px 10px", background: "#F1EFE8",
+              borderRadius: 8, fontSize: 11.5, lineHeight: 1.7 }}>
+              <div style={{ fontWeight: 700, color: COLORS.navy2, marginBottom: 3 }}>근본원인</div>
+              <div style={{ color: "#3A3933" }}>{it.root}</div>
+            </div>
+            <div style={{ padding: "8px 10px", background: c.bg, borderRadius: 8,
+              fontSize: 11.5, lineHeight: 1.7, border: `1px solid ${c.border}` }}>
+              <div style={{ fontWeight: 700, color: c.fg, marginBottom: 3 }}>
+                해결 방안 — {it.type}
+              </div>
+              <div style={{ color: c.fg, whiteSpace: "pre-line" }}>{it.solution}</div>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10.5, background: "#E1F5EE", color: "#04342C",
+                borderRadius: 6, padding: "2px 8px", fontWeight: 600 }}>ROI {it.roi}</span>
+              <span style={{ fontSize: 10.5, background: COLORS.navy, color: "#fff",
+                borderRadius: 6, padding: "2px 8px" }}>{it.period}</span>
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -1588,87 +1447,91 @@ function Tag({ label }) {
 // ------------------------------------------------------------
 
 function RoadmapStage() {
+  const qColors = { q1:"coral", q2:"blue", q3:"amber", q4:"gray" };
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
-      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        Pilot → 검증 → 표준화·확산의 단계로, <b>계열사 전파가 가능한 구조</b>로 설계합니다.
-      </p>
+      <StageLede
+        kicker="추진 로드맵"
+        headline="ROI × 시급성으로 과제를 배치하고, 3단계로 실행한다"
+        sub="즉시 해야 할 퀵윈, 기반을 쌓는 중기, AI·플랫폼으로 가는 전략 과제를 구분합니다."
+      />
 
-      {roadmap.map((r, i) => (
-        <Card key={i}>
-          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: COLORS.navy,
-                  color: "#9FCBB8",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                  flexShrink: 0,
-                }}
-              >
-                {i + 1}
-              </div>
-              {i < roadmap.length - 1 && (
-                <div style={{ width: 2, flex: 1, background: COLORS.line, marginTop: 4, minHeight: 30 }} />
-              )}
-            </div>
-            <div style={{ flex: 1, paddingBottom: i < roadmap.length - 1 ? 4 : 0 }}>
-              <div style={{ fontSize: 11.5, color: COLORS.teal, fontWeight: 600 }}>{r.phase}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{r.title}</div>
-              <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-                {r.items.map((it, j) => (
-                  <li key={j} style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.7 }}>
-                    {it}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </Card>
-      ))}
-
+      {/* 2×2 매트릭스 */}
       <Card>
-        <SectionLabel>KPI — 운영 지표 · 재무 지표로 관리</SectionLabel>
+        <SectionLabel>ROI × 시급성 매트릭스</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 6 }}>
+          {Object.entries(roadmapMatrix).map(([key, q]) => {
+            const c = colorMap[qColors[key]];
+            return (
+              <div key={key} style={{ background: c.bg, borderRadius: 10, padding: "10px 10px",
+                border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: c.fg }}>{q.label}</div>
+                <div style={{ fontSize: 9.5, color: c.fg, opacity: 0.7, marginTop: 1 }}>{q.axis}</div>
+                <div style={{ marginTop: 6 }}>
+                  {q.items.map((it, i) => (
+                    <div key={i} style={{ fontSize: 10.5, color: c.fg, lineHeight: 1.6,
+                      paddingLeft: 8, borderLeft: `2px solid ${c.border}`, marginBottom: 3 }}>
+                      {it}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* 3단계 */}
+      {roadmapPhases.map((ph, i) => {
+        const c = colorMap[ph.color];
+        return (
+          <Card key={i}>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: c.bg,
+                border: `1px solid ${c.border}`, display: "flex", alignItems: "center",
+                justifyContent: "center", fontWeight: 800, fontSize: 14, color: c.fg, flexShrink: 0 }}>
+                {i+1}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10.5, color: c.fg, fontWeight: 700 }}>{ph.phase}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.35, marginTop: 2 }}>{ph.title}</div>
+                <span style={{ fontSize: 10, background: c.bg, color: c.fg, borderRadius: 5,
+                  padding: "2px 7px", fontWeight: 600, display: "inline-block", marginTop: 4 }}>
+                  {ph.badge}
+                </span>
+                <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+                  {ph.items.map((it, j) => (
+                    <li key={j} style={{ fontSize: 12.5, color: "#4A4943", lineHeight: 1.7 }}>{it}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+
+      {/* KPI */}
+      <Card>
+        <SectionLabel>KPI — 운영 지표 · 재무 지표</SectionLabel>
         <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.navy2, marginBottom: 4 }}>운영 지표</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.navy2, marginBottom: 4 }}>운영</div>
             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, lineHeight: 1.7, color: "#4A4943" }}>
-              <li>중대재해 건수(목표 0)</li>
+              <li>중대재해 건수 (목표 0)</li>
               <li>Near-Miss→사고 전환율</li>
-              <li>근본원인 해소율(%)</li>
-              <li>법규 의무 이행률(%)</li>
+              <li>근본원인 해소율</li>
+              <li>법규 이행률</li>
             </ul>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.navy2, marginBottom: 4 }}>재무 지표</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: COLORS.navy2, marginBottom: 4 }}>재무</div>
             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, lineHeight: 1.7, color: "#4A4943" }}>
               <li>예방투자 대비 위험감소액</li>
               <li>사고 손실비용 절감</li>
-              <li>근본원인당 <Term k="CBA">CBA</Term> 순편익</li>
+              <li>CBA 순편익</li>
               <li>관계사 확산 ROI</li>
             </ul>
           </div>
-        </div>
-        <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "10px 0 0", lineHeight: 1.6 }}>
-          운영 지표로 '안전이 실제 좋아지는가'를, 재무 지표로 '투자가 합리적인가'를 동시에 관리합니다.
-        </p>
-      </Card>
-
-      <Card style={{ background: "#E1F5EE", border: "none" }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-          <CheckCircle2 size={18} color="#085041" style={{ flexShrink: 0, marginTop: 1 }} />
-          <p style={{ fontSize: 12.5, color: "#04342C", lineHeight: 1.7, margin: 0 }}>
-            <b>기대 효과</b>: Pilot 구역 Near-Miss → 사고 전환율 30% 이상 감소,
-            중대재해처벌법 4대 의무 이행 데이터의 상시 증빙 체계 확보, 계열사 표준 템플릿
-            기반 단계적 확산.
-          </p>
         </div>
       </Card>
     </div>
@@ -1680,11 +1543,11 @@ function RoadmapStage() {
 // ------------------------------------------------------------
 
 function DetailStage() {
-  const [sub, setSub] = useState("costlimit");
+  const [sub, setSub] = useState("lineage");
   return (
     <div>
       <div style={{ display: "flex", gap: 6, padding: "14px 16px 0" }}>
-        {[["costlimit", "센서·Cost·Limit"], ["lineage", "데이터 계보"]].map(([k, label]) => {
+        {[["lineage", "데이터 계보"], ["costlimit", "센서·Cost·Limit"]].map(([k, label]) => {
           const active = sub === k;
           return (
             <button key={k} onClick={() => setSub(k)}
@@ -1768,10 +1631,8 @@ function CostLimitStage() {
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
       <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        설비·헬멧·환경 <b>센서 데이터로 이상을 감지</b>해 근본원인을 파악하고, 거기서
-        <b>우리가 관리해야 할 Limit(운영 한계선)</b>을 정합니다. Cost는 그 근본원인 제거
-        대책을 장비 단위로 분해해 산출하고, Limit은 <Term k="HSE">HSE</Term>·<Term k="VPF">VPF</Term>
-        학술 근거 위에 산업·전략 특성을 반영해 현실화합니다.
+        데이터 플랫폼에 센서가 연결되고 사고 케이스가 쌓이면, 지금의 가상 Limit이
+        실제 운영 기준선으로 바뀝니다. 아래는 그 구조의 샘플입니다.
       </p>
 
       {/* 센서 → 근본원인 → Limit */}
@@ -1921,8 +1782,8 @@ function CostLimitStage() {
       </Card>
 
       <div style={{ background: "#E1F5EE", color: "#04342C", borderRadius: 10, padding: "10px 12px", fontSize: 11.5, lineHeight: 1.6 }}>
-        면접 포인트: "Limit은 고정값이 아니라 산업·사업 전략에 따라 움직이는 변수다.
-        학술 기준을 토대로, 사업 국면별 6M 가중으로 현실화하는 로직을 설계했다."
+        Limit은 고정값이 아니라 산업·사업 국면에 따라 움직이는 변수입니다. 학술 기준 위에
+        사업별 6M 가중을 적용해, 같은 위험도 현실에 맞게 운영기준선을 조정합니다.
       </div>
     </div>
   );
@@ -2216,12 +2077,7 @@ function QRStage() {
   const dim = (QR_SIZE + border * 2) * cell;
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
-      <p style={{ fontSize: 13.5, color: "#3A3933", lineHeight: 1.6, margin: 0 }}>
-        면접관이 폰으로 바로 접속할 수 있는 QR과 주소입니다. 발표자료에 이 화면을
-        그대로 띄워도 됩니다.
-      </p>
-
-      <Card style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 18 }}>
+      <Card style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 22 }}>
         <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`} shapeRendering="crispEdges"
           style={{ maxWidth: 240, width: "100%", height: "auto" }}>
           <rect width={dim} height={dim} fill="#fff" />
@@ -2232,23 +2088,10 @@ function QRStage() {
             ))
           )}
         </svg>
-        <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 10 }}>스캔하면 메인 앱으로 이동</div>
+        <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 12 }}>스캔하면 앱으로 이동</div>
       </Card>
 
-      <Card>
-        <SectionLabel>접속 주소</SectionLabel>
-        <LinkRow icon={Smartphone} label="메인 앱" url={APP_URL} />
-        <div style={{ height: 8 }} />
-        <LinkRow icon={GitBranch} label="데이터 아키텍처(웹)" url={ARCH_URL} />
-        <div style={{ height: 8 }} />
-        <LinkRow icon={Database} label="실제 데이터셋(2023 공식 통계)" url={REAL_URL} />
-      </Card>
-
-      <div style={{ background: "#E1F5EE", color: "#04342C", borderRadius: 10, padding: "10px 12px",
-        fontSize: 11.5, lineHeight: 1.6 }}>
-        팁: 발표자료 첫 장에 이 QR을 넣고 "직접 보시겠어요?"로 자연스럽게 시연을 유도하세요.
-        코드를 수정해 push하면 1~3분 뒤 같은 주소에 자동 반영됩니다.
-      </div>
+      <LinkRow icon={Smartphone} label="메인 앱" url={APP_URL} />
     </div>
   );
 }
