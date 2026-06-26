@@ -765,112 +765,157 @@ function FlowStep({ n, label, icon: Icon, last }) {
 }
 
 function ProfileStage() {
-  const card = { background: "#fff", border: `1px solid ${COLORS.line}`, borderRadius: 12, padding: "12px 14px" };
-  const stepBadge = (bg) => ({ display: "inline-block", fontSize: 11, fontWeight: 800, color: "#fff",
-    background: bg, borderRadius: 14, padding: "3px 11px", marginBottom: 6 });
   return (
-    <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Cover */}
-      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "18px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 10.5, letterSpacing: 1.5, fontWeight: 800, color: "#9FCBB8" }}>
-          SAMSUNG · 자기소개서
+    <div style={{ padding: "0 0 8px", display: "flex", flexDirection: "column" }}>
+      {/* ===== Cover ===== */}
+      <div style={{ background: COLORS.navy, padding: "44px 24px 40px", color: "#fff" }}>
+        <div style={{ fontSize: 14, letterSpacing: 3, fontWeight: 800, color: "#9FCBB8" }}>
+          SAMSUNG
         </div>
-        <div style={{ fontSize: 12, color: "#CFE9DE", margin: "8px 0 12px", lineHeight: 1.5 }}>
-          EHS 스마트안전기술 기획 직무 지원 · 지원자 하영우
+        <div style={{ fontSize: 15, color: "#CFE9DE", margin: "18px 0 26px", lineHeight: 1.6, fontWeight: 600 }}>
+          EHS 스마트안전기술 기획 지원 · 하영우
         </div>
-        <div style={{ fontSize: 21, fontWeight: 800, lineHeight: 1.35, letterSpacing: -0.4 }}>
-          Biz.부터 Data까지,<br />제조 안전을 실행하는 전략 기획자
+        <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.3, letterSpacing: -1 }}>
+          Biz.부터<br />Data까지,<br />
+          <span style={{ color: "#5FD0A8" }}>제조 안전을 실행</span>하는<br />전략 기획자
         </div>
-        <div style={{ fontSize: 13, color: "#9FCBB8", fontWeight: 700, marginTop: 12, lineHeight: 1.6 }}>
-          데이터로 진단하고, 전략을 세우고, 관계사 구축까지 잇습니다
-        </div>
-        <div style={{ fontSize: 12, color: "#CFE9DE", marginTop: 8, fontStyle: "italic", lineHeight: 1.6 }}>
-          "중대재해 0" — 데이터가 가리키는 위험을 사고 전에 막는다
+        <div style={{ marginTop: 30, fontSize: 17, color: "#CFE9DE", fontWeight: 700, lineHeight: 1.6 }}>
+          데이터 → 전략 → 구축,<br />그 전 과정을 직접 잇습니다
         </div>
       </div>
 
-      {/* 1. 왜 저인가 */}
-      <Card>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-          <span style={{ width: 26, height: 26, borderRadius: 8, background: COLORS.teal, color: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>1</span>
-          <span style={{ fontSize: 15, fontWeight: 800 }}>왜 저인가 — Biz.부터 Data까지</span>
+      {/* ===== WHY ME — 경력 스파인 ===== */}
+      <div style={{ background: "#fff", padding: "34px 24px", borderBottom: `1px solid ${COLORS.line}` }}>
+        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: COLORS.teal, marginBottom: 22 }}>
+          WHY ME
         </div>
-        <p style={{ fontSize: 12.5, color: "#3A3933", lineHeight: 1.6, margin: "0 0 10px" }}>
-          가장 밑바닥 <b>데이터</b>부터 <b>전략 기획</b>까지 모두 경험했기에, 실질적 가치를 만드는
-          안전기술 기획을 수행할 수 있습니다.
-        </p>
-        <div style={{ ...card, marginBottom: 8 }}>
-          <span style={stepBadge(COLORS.blue)}>STEP 1 · 현장 · Data</span>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>SK하이닉스 — 공정 엔지니어 · Data Engineer</div>
-          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
-            제조 시스템의 밑바닥 데이터부터 운영 프로세스까지 이해. 현업 관점에서 데이터를
-            분석·구조화해 생산성·품질·비용을 개선.
-          </div>
+        <div style={{ fontSize: 25, fontWeight: 800, lineHeight: 1.4, letterSpacing: -0.6, color: COLORS.navy }}>
+          제조 DX/AX의 전략·기획·<br />구축·운영을 모두 경험
         </div>
-        <div style={card}>
-          <span style={stepBadge(COLORS.navy)}>STEP 2 · 전략 · 기획</span>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>Kearney — Strategy Consultant</div>
-          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
-            배터리 Top 기업 Smart Factory 전략 수립·PI, 전선 제조기업 5년 디지털 전환
-            전략을 수립·이행.
-          </div>
+        <div style={{ fontSize: 16, color: "#3A3933", lineHeight: 1.75, marginTop: 18 }}>
+          가장 구체화된 <b style={{ color: COLORS.navy }}>Data Level</b> 이행이 가능한
+          전략 기획자입니다. KAIST 기계공학 학사.
         </div>
-      </Card>
+        {/* 경력 타임라인 (최신순) */}
+        <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 0 }}>
+          {[
+            { step: "전략 · 구축 (현재)", org: "한화에어로스페이스", role: "제조혁신담당 / 과장",
+              desc: "전사 제조 시스템 구축 MP/PI, 해외 사업장 표준 프로세스 정의·관리", c: COLORS.teal },
+            { step: "전략 · 컨설팅", org: "Kearney", role: "DT / Specialist Associate",
+              desc: "대한전선·LG에너지솔루션 스마트팩토리 Master Plan·PI 컨설팅", c: COLORS.navy2 },
+            { step: "현장 · DATA", org: "SK하이닉스", role: "Data Architecture / TL",
+              desc: "Smart Factory 3대 핵심과제 Data 담당, Pipeline·Mart 구축, AI/ML 솔루션 개발", c: COLORS.blue },
+          ].map((s, i, arr) => (
+            <div key={i} style={{ display: "flex", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{ width: 18, height: 18, borderRadius: "50%", background: s.c, flexShrink: 0,
+                  border: "3px solid #fff", boxShadow: `0 0 0 2px ${s.c}` }} />
+                {i < arr.length - 1 && (
+                  <div style={{ width: 3, flex: 1, background: COLORS.line, minHeight: 58 }} />
+                )}
+              </div>
+              <div style={{ paddingBottom: i < arr.length - 1 ? 22 : 0, flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: s.c }}>{s.step}</div>
+                <div style={{ fontSize: 19, fontWeight: 800, color: COLORS.navy, marginTop: 4, lineHeight: 1.3 }}>
+                  {s.org} <span style={{ fontSize: 13.5, fontWeight: 700, color: COLORS.textMuted }}>· {s.role}</span>
+                </div>
+                <div style={{ fontSize: 14.5, color: "#4A4943", lineHeight: 1.65, marginTop: 6 }}>{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* 2. 3대 강점 */}
-      <Card>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-          <span style={{ width: 26, height: 26, borderRadius: 8, background: COLORS.teal, color: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>2</span>
-          <span style={{ fontSize: 15, fontWeight: 800 }}>3대 핵심 강점</span>
+      {/* ===== 직무 적합성 — 안전기획 3 Skill Set ===== */}
+      <div style={{ background: COLORS.bg, padding: "34px 24px" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: COLORS.teal, marginBottom: 10 }}>
+          FIT
         </div>
-        {[
-          ["① Python 데이터 분석", "현업 문제를 정량 판단 → 신규 프로젝트 발굴·기획", "→ Pain Point를 '숫자'로 증명"],
-          ["② C-level 보고·기획·운영", "C-level 보고서 작성 + 프로젝트 기획·운영", "→ 전략을 '실행'으로 연결"],
-          ["③ 신기술 적용 기획", "신기술의 자사 적용 가능성 분석·기획", "→ AI·스마트안전 선제 검토"],
-        ].map(([t, d, arrow], i) => (
-          <div key={i} style={{ padding: "8px 0", borderTop: i ? `1px solid ${COLORS.line}` : "none" }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{t}</div>
-            <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2, lineHeight: 1.5 }}>{d}</div>
-            <div style={{ fontSize: 11.5, color: COLORS.teal, fontWeight: 700, marginTop: 3 }}>{arrow}</div>
-          </div>
-        ))}
-      </Card>
+        <div style={{ fontSize: 25, fontWeight: 800, lineHeight: 1.4, letterSpacing: -0.6, color: COLORS.navy, marginBottom: 8 }}>
+          안전기획에 필요한<br />3가지 역량 중 2가지 보유
+        </div>
+        <div style={{ fontSize: 15, color: "#4A4943", lineHeight: 1.65, marginBottom: 22 }}>
+          스마트 안전기술 기획은 <b style={{ color: COLORS.navy }}>안전지식 · 컨설팅 · Data/IT</b> 세 역량이 핵심입니다.
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {[
+            { n: "01", t: "컨설팅 역량", d: "선진사 벤치마킹 기반 Master Plan·PI 컨설팅, RoI·시급성 기준 과제 우선순위·로드맵 수립", have: true },
+            { n: "02", t: "Data / IT 지식", d: "공정·설비 Big Data Pipeline 구축, AI/ML 기반 품질 예측 — 안전 사고 예측과 직결되는 경험", have: true },
+            { n: "03", t: "안전 지식", d: "QCD에서 안전으로 — 安全 Data부터 중대재해 0까지 체계를 만드는 영역으로 확장", have: false },
+          ].map((s, i) => (
+            <div key={i} style={{ background: "#fff", borderRadius: 18, padding: "20px 22px",
+              border: `1px solid ${s.have ? COLORS.teal : COLORS.line}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 26, fontWeight: 800, color: s.have ? COLORS.teal : "#C9C6BD", lineHeight: 1 }}>{s.n}</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: COLORS.navy }}>{s.t}</span>
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 800, color: "#fff",
+                  background: s.have ? COLORS.teal : "#B7B4AC", borderRadius: 12, padding: "3px 10px" }}>
+                  {s.have ? "보유" : "확장 중"}
+                </span>
+              </div>
+              <div style={{ fontSize: 14.5, color: "#4A4943", lineHeight: 1.6, marginTop: 10 }}>{s.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* 3. 프로젝트 */}
-      <Card>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-          <span style={{ width: 26, height: 26, borderRadius: 8, background: COLORS.teal, color: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>3</span>
-          <span style={{ fontSize: 15, fontWeight: 800 }}>대표 프로젝트</span>
+      {/* ===== 대표 프로젝트 ===== */}
+      <div style={{ background: "#fff", padding: "34px 24px", borderTop: `1px solid ${COLORS.line}` }}>
+        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: COLORS.teal, marginBottom: 10 }}>
+          PROJECTS
         </div>
-        <div style={{ ...card, marginBottom: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>Project 1 · 전선 스마트제조 MP·PI <span style={{ color: COLORS.textMuted, fontWeight: 500 }}>(1년·품질 PL)</span></div>
-          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
-            Two-Way(Top-Down·Bottom-Up)로 미래 이미지를 설계하고 '투자→PI→구축'까지 직접 이행.
+        <div style={{ fontSize: 25, fontWeight: 800, lineHeight: 1.4, letterSpacing: -0.6, color: COLORS.navy, marginBottom: 22 }}>
+          전략부터 구축까지,<br />직접 이끈 경험
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Project 1 — 대한전선 MP */}
+          <div style={{ background: COLORS.bg, borderRadius: 18, padding: "22px" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.coral }}>PROJECT 1 · 공정/품질 Part Leader</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.navy, marginTop: 6, lineHeight: 1.35 }}>
+              대한전선 제조혁신 Master Plan
+            </div>
+            <div style={{ fontSize: 14.5, color: "#4A4943", lineHeight: 1.65, marginTop: 10 }}>
+              As-is 분석·8대 이슈 도출 → To-be 설계 → 12개 과제를
+              <b style={{ color: COLORS.navy }}> RoI·시급성·전략 방향</b>으로 우선순위화·로드맵 수립.
+            </div>
+            <div style={{ marginTop: 12, background: "#fff", borderRadius: 10, padding: "10px 14px",
+              fontSize: 14, fontWeight: 800, color: COLORS.navy }}>
+              → MP 이후 <span style={{ color: COLORS.coral }}>350억 규모 PI 투자 승인</span>·이행 중
+            </div>
+          </div>
+          {/* Project 2 — ETCH Data Pipeline (요청 추가) */}
+          <div style={{ background: COLORS.bg, borderRadius: 18, padding: "22px" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.blue }}>PROJECT 2 · PM · Data Engineer</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.navy, marginTop: 6, lineHeight: 1.35 }}>
+              ETCH Data Pipeline·분석 App 구축
+            </div>
+            <div style={{ fontSize: 14.5, color: "#4A4943", lineHeight: 1.65, marginTop: 10 }}>
+              설비 변경점 후 첫 반제품 품질불량 해소를 위해 Airflow·PySpark·자체 Big Data SDK로
+              <b style={{ color: COLORS.navy }}> Data Mart·분석 App</b>을 구축.
+              <span style={{ color: COLORS.textMuted }}> (안전 사고 예측과 동일한 데이터 구조)</span>
+            </div>
+            <div style={{ marginTop: 12, background: "#fff", borderRadius: 10, padding: "10px 14px",
+              fontSize: 14, fontWeight: 800, color: COLORS.navy }}>
+              → <span style={{ color: COLORS.blue }}>24억/년 비용 절감</span> · 제조기술 부사장상 수상
+            </div>
           </div>
         </div>
-        <div style={card}>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>Project 2 · 배터리 Top Smart Factory <span style={{ color: COLORS.textMuted, fontWeight: 500 }}>(컨설턴트·3인)</span></div>
-          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
-            방향성 부재 피로감을 '전사 공통 To-Be + 조망 아키텍처'로 해소. 전략 3개월 + PI 9개월로 구축 기여.
-          </div>
-        </div>
-      </Card>
+      </div>
 
-      {/* 4. 다짐 */}
-      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "16px", color: "#fff" }}>
-        <div style={{ fontSize: 11, color: "#9FCBB8", fontWeight: 800, marginBottom: 8 }}>4 · 적합성 & 다짐</div>
-        <div style={{ fontSize: 12.5, lineHeight: 1.8 }}>
-          <div><b style={{ color: "#9FCBB8" }}>경험</b> · Two-Way(Top-Down·Bottom-Up) 도출</div>
-          <div><b style={{ color: "#9FCBB8" }}>역량</b> · C-level 보고·기획·운영</div>
-          <div><b style={{ color: "#9FCBB8" }}>연계</b> · Data → 전략 → 실제 구축 이행</div>
+      {/* ===== Closing ===== */}
+      <div style={{ background: COLORS.navy, padding: "40px 24px 46px", color: "#fff" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: "#9FCBB8", marginBottom: 18 }}>
+          CLOSING
         </div>
-        <div style={{ fontSize: 14, fontWeight: 700, marginTop: 14, lineHeight: 1.6, fontStyle: "italic" }}>
-          "중대재해 0"을 향해, 데이터에서 출발해 구축까지 잇는 안전 전략을 실행하겠습니다.
+        <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.45, letterSpacing: -0.6 }}>
+          "중대재해 0"을 향해,<br />
+          <span style={{ color: "#5FD0A8" }}>데이터에서 구축까지</span><br />잇겠습니다
         </div>
-        <div style={{ fontSize: 12, color: "#9FCBB8", marginTop: 6 }}>— 하영우</div>
+        <div style={{ fontSize: 16, color: "#CFE9DE", lineHeight: 1.8, marginTop: 22 }}>
+          제가 진행한 과제의 목적은 QCD였지만, 안전 또한 Data Level부터 체계를 만들어
+          계열사에 전략 기획·컨설팅하는 업무를 충분히 소화하겠습니다.
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 800, marginTop: 24, color: "#fff" }}>— 하영우</div>
       </div>
     </div>
   );
