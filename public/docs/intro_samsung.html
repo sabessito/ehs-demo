@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>자기소개서 — 하영우</title>
+<style>
+  :root{
+    --navy:#0E2A38; --navy2:#16435A; --teal:#1D9E75; --bg:#F6F5F1;
+    --line:#E2E0D8; --muted:#6B6A63; --blue:#378ADD; --amber:#BA7517; --coral:#D85A30;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth;}
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg);color:#1B1B18;-webkit-font-smoothing:antialiased;}
+  .deck{max-width:520px;margin:0 auto;}
+  section{min-height:100svh;scroll-snap-align:start;display:flex;flex-direction:column;
+    justify-content:center;padding:40px 28px;position:relative;}
+  /* progress dots */
+  .nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:50;
+    display:flex;flex-direction:column;gap:9px;}
+  .nav a{width:8px;height:8px;border-radius:50%;background:rgba(110,106,99,.35);display:block;transition:all .2s;}
+  .nav a.on{background:var(--teal);height:20px;border-radius:4px;}
+  /* kicker / numbers */
+  .kick{font-size:12px;letter-spacing:2px;font-weight:800;color:var(--teal);margin-bottom:14px;text-transform:uppercase;}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;
+    background:var(--teal);color:#fff;font-weight:800;font-size:17px;margin-bottom:16px;}
+  h1{font-size:38px;font-weight:800;line-height:1.3;letter-spacing:-.5px;}
+  h2{font-size:27px;font-weight:800;line-height:1.32;letter-spacing:-.4px;}
+  .big{font-size:21px;font-weight:700;line-height:1.5;}
+  .lead{font-size:16px;line-height:1.7;color:#3A3933;}
+  .mut{color:var(--muted);}
+  .tag{display:inline-block;font-size:13px;font-weight:700;padding:5px 13px;border-radius:20px;}
+  /* dark sections */
+  .dark{background:var(--navy);color:#fff;}
+  .dark .lead{color:#CFE9DE;}
+  .dark h1,.dark h2{color:#fff;}
+  /* card */
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .dark .card{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);}
+  .row{display:flex;gap:12px;align-items:flex-start;margin-top:14px;}
+  .dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+  .foot{position:absolute;left:28px;bottom:22px;font-size:12px;font-weight:800;letter-spacing:1px;color:var(--muted);}
+  .dark .foot{color:rgba(255,255,255,.5);}
+  .pg{position:absolute;right:28px;bottom:22px;font-size:12px;color:var(--muted);}
+  .dark .pg{color:rgba(255,255,255,.5);}
+  .hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;font-size:11px;
+    color:var(--muted);background:rgba(246,245,241,.9);padding:5px 12px;border-radius:20px;
+    animation:fade 2.4s ease-in-out infinite;}
+  @keyframes fade{0%,100%{opacity:.4}50%{opacity:1}}
+  .arrow{color:var(--teal);font-weight:800;}
+  .stepbadge{font-size:13px;font-weight:800;color:#fff;padding:5px 14px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+  .flow{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;align-items:center;}
+  .flow span.s{background:var(--navy2);color:#fff;font-size:13px;font-weight:700;padding:8px 12px;border-radius:9px;}
+  .flow span.a{color:var(--teal);font-weight:800;}
+  @media(max-width:380px){h1{font-size:32px}h2{font-size:23px}.big{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="nav" id="nav"></div>
+<div class="hint">↓ 스크롤 또는 위로 스와이프</div>
+
+<div class="deck">
+
+  <!-- 1. Cover -->
+  <section class="dark">
+    <div class="kick">SAMSUNG · 자기소개서</div>
+    <div class="lead" style="margin-bottom:18px">EHS 스마트안전기술 기획 직무 지원 · 지원자 하영우</div>
+    <h1>Biz.부터 Data까지,<br>제조 안전을 실행하는<br>전략 기획자</h1>
+    <div class="big" style="margin-top:22px;color:#9FCBB8">
+      데이터로 진단하고, 전략을 세우고,<br>관계사 구축까지 잇습니다
+    </div>
+    <div class="lead" style="margin-top:18px;font-style:italic">
+      "중대재해 0" — 데이터가 가리키는 위험을 사고 전에 막는다
+    </div>
+    <div class="foot">SAMSUNG</div>
+    <div class="pg">01 / 6</div>
+  </section>
+
+  <!-- 2. Why me -->
+  <section>
+    <div class="num">1</div>
+    <h2>왜 저인가 —<br>Biz.부터 Data까지<br>제조 혁신 경험</h2>
+    <div class="lead" style="margin-top:16px">
+      가장 밑바닥 <b>데이터</b>부터 <b>전략 기획</b>까지 모두 경험했기에,
+      실질적 가치를 만드는 안전기술 기획을 수행할 수 있습니다.
+    </div>
+    <div class="card">
+      <span class="stepbadge" style="background:var(--blue)">STEP 1 · 현장 · Data</span>
+      <div class="big">SK하이닉스 — 공정 엔지니어 · Data Engineer</div>
+      <div class="lead mut" style="margin-top:8px;font-size:15px">
+        제조 시스템의 가장 밑바닥 데이터부터 운영 프로세스까지 이해.
+        현업 관점에서 데이터를 분석·구조화해 생산성·품질·비용을 개선.
+      </div>
+    </div>
+    <div class="card">
+      <span class="stepbadge" style="background:var(--navy)">STEP 2 · 전략 · 기획</span>
+      <div class="big">Kearney — Strategy Consultant</div>
+      <div class="lead mut" style="margin-top:8px;font-size:15px">
+        배터리 Top 기업 Smart Factory 전략 수립·PI, 전선 제조기업 5년
+        디지털 전환 전략을 수립·이행.
+      </div>
+    </div>
+    <div class="foot">SAMSUNG</div>
+    <div class="pg">02 / 6</div>
+  </section>
+
+  <!-- 3. Strengths -->
+  <section class="dark">
+    <div class="num">2</div>
+    <h2>3대 핵심 강점 —<br>분석을 '실행 가능한<br>기획'으로</h2>
+    <div class="card">
+      <div class="big" style="color:#fff">① Python 데이터 분석</div>
+      <div class="lead" style="margin-top:6px;font-size:15px">현업의 문제를 정량적으로 판단 → 신규 프로젝트 발굴·기획</div>
+      <div style="color:#9FCBB8;font-weight:700;margin-top:8px;font-size:14px">→ Pain Point를 '숫자'로 증명</div>
+    </div>
+    <div class="card">
+      <div class="big" style="color:#fff">② C-level 보고 · 기획·운영</div>
+      <div class="lead" style="margin-top:6px;font-size:15px">C-level 보고서 작성 + 프로젝트 기획·운영 수행</div>
+      <div style="color:#9FCBB8;font-weight:700;margin-top:8px;font-size:14px">→ 전략을 '실행'으로 연결</div>
+    </div>
+    <div class="card">
+      <div class="big" style="color:#fff">③ 신기술 적용 기획</div>
+      <div class="lead" style="margin-top:6px;font-size:15px">신기술의 자사 적용 가능성 분석 및 기획</div>
+      <div style="color:#9FCBB8;font-weight:700;margin-top:8px;font-size:14px">→ AI·스마트안전 선제 검토</div>
+    </div>
+    <div class="foot">SAMSUNG</div>
+    <div class="pg">03 / 6</div>
+  </section>
+
+  <!-- 4. Project 1 -->
+  <section>
+    <div class="num">3</div>
+    <h2>Project 1 —<br>전선 스마트제조 MP·PI</h2>
+    <div class="tag" style="background:#E1F5EE;color:#04342C;margin-top:12px">1년 · 품질 PL</div>
+    <div class="lead" style="margin-top:14px">
+      <b>Two-Way Approach</b>로 미래 이미지를 빠짐없이 설계하고,
+      <b>'투자 → PI → 구축'</b>까지 직접 이행했습니다.
+    </div>
+    <div class="card">
+      <div class="big">전략 방향성 수립 (Two-Way)</div>
+      <div class="row"><span class="dot" style="background:var(--navy)"></span>
+        <div><b>Top-Down</b> <span class="mut">— 회사 전략 방향성에 따라 '해야 할 일' 발굴</span></div></div>
+      <div class="row"><span class="dot" style="background:var(--teal)"></span>
+        <div><b>Bottom-Up</b> <span class="mut">— 현업의 당면 Issue부터 개선점 발굴</span></div></div>
+    </div>
+    <div class="card" style="background:var(--navy);border:none">
+      <div style="color:#9FCBB8;font-weight:800;font-size:14px;margin-bottom:10px">성과 — 분석에서 구축까지</div>
+      <div class="flow">
+        <span class="s">Master Plan</span><span class="a">▶</span>
+        <span class="s">투자 확보</span><span class="a">▶</span>
+        <span class="s">PI 수행</span><span class="a">▶</span>
+        <span class="s">시스템 구축</span>
+      </div>
+    </div>
+    <div class="foot">SAMSUNG</div>
+    <div class="pg">04 / 6</div>
+  </section>
+
+  <!-- 5. Project 2 -->
+  <section>
+    <div class="num">3</div>
+    <h2>Project 2 —<br>배터리 Top<br>Smart Factory</h2>
+    <div class="tag" style="background:#E1F5EE;color:#04342C;margin-top:12px">Consultant · 3인</div>
+    <div class="lead" style="margin-top:14px">
+      방향성 부재로 누적된 피로감을, <b>'전사 공통 To-Be 이미지 +
+      조망 아키텍처'</b>로 해소했습니다.
+    </div>
+    <div class="card">
+      <div class="row"><span class="dot" style="background:var(--coral)"></span>
+        <div><b>현상</b> <span class="mut">— 30여 개 아젠다로 오래 진행했으나 전략 방향성 부재로 피로감 누적</span></div></div>
+      <div class="row"><span class="dot" style="background:var(--teal)"></span>
+        <div><b>해결</b> <span class="mut">— To-Be Image·업무 변화·로드맵·조망 아키텍처로 전사 동일 시각 확보</span></div></div>
+      <div class="row"><span class="dot" style="background:var(--navy)"></span>
+        <div><b>성과</b> <span class="mut">— 전략 3개월 + 과제 PI 9개월 → 구축 기여</span></div></div>
+    </div>
+    <div class="foot">SAMSUNG</div>
+    <div class="pg">05 / 6</div>
+  </section>
+
+  <!-- 6. Closing -->
+  <section class="dark">
+    <div class="num">4</div>
+    <h2>EHS 스마트안전기술 기획<br>— 적합성 & 다짐</h2>
+    <div class="lead" style="margin-top:14px">
+      현장 데이터를 아는 전략가 — 분석을 데이터 수준에서
+      <b style="color:#fff">'실행 가능한 전략 기획'</b>으로 잇습니다.
+    </div>
+    <div class="card">
+      <div><b style="color:#9FCBB8">경험</b> · Two-Way(Top-Down·Bottom-Up) 도출</div>
+      <div style="margin-top:14px"><b style="color:#9FCBB8">역량</b> · C-level 보고·기획·운영</div>
+      <div style="margin-top:14px"><b style="color:#9FCBB8">연계</b> · Data → 전략 → 실제 구축 이행</div>
+    </div>
+    <div class="big" style="margin-top:22px;color:#fff;font-style:italic">
+      "중대재해 0"을 향해, 데이터에서 출발해<br>구축까지 잇는 안전 전략을 실행하겠습니다.
+    </div>
+    <div class="lead" style="margin-top:10px;color:#9FCBB8">— 하영우</div>
+    <div class="foot">SAMSUNG</div>
+    <div class="pg">06 / 6</div>
+  </section>
+
+</div>
+
+<script>
+  const secs=[...document.querySelectorAll('section')];
+  const nav=document.getElementById('nav');
+  secs.forEach((s,i)=>{const a=document.createElement('a');a.href='#';
+    a.onclick=e=>{e.preventDefault();s.scrollIntoView();};nav.appendChild(a);});
+  const dots=[...nav.children];
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{
+    if(e.isIntersecting){const i=secs.indexOf(e.target);
+      dots.forEach((d,j)=>d.classList.toggle('on',j===i));
+      const h=document.querySelector('.hint');if(i>0&&h)h.style.display='none';
+    }});},{threshold:.6});
+  secs.forEach(s=>io.observe(s));
+</script>
+</body>
+</html>
