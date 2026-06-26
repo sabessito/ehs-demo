@@ -165,7 +165,7 @@ const strategyPillars = [
     body: "한 사업장에서 검증한 모델을 패키지화해 관계사로 전파합니다. 사업군별 특성에 맞게 기준위험도와 Limit을 조정해 적용합니다." },
 ];
 
-// 핵심 과제 — 4M(Man/Machine/Method/Monitoring) + 근본원인 → 해결 유형
+// 핵심 과제 — 4M(Man/Machine/Material/Method) + 근본원인 → 해결 유형
 const initiatives = [
   {
     rank: 1,
@@ -183,7 +183,7 @@ const initiatives = [
     title: "고소작업장 감지 방식 전환 — 투자 방향 재설계",
     headline: "투자 방향이 잘못됐다 — 사후 장치 → 사전 감지",
     root: "추락방지 설계 치우침(Machine) + 동선·착용 점검 부재(Management)",
-    solution: "Monitoring: 스마트 안전모·동선 센서 도입\nMan: 착용 의무화 교육·패널티 체계",
+    solution: "Material: 스마트 안전모·동선 감지 센서 도입\nMan: 착용 의무화 교육·패널티 체계",
     type: "센싱 + 교육",
     roi: "상", urgency: "중",
     period: "3~6개월",
@@ -205,7 +205,7 @@ const initiatives = [
     title: "AI 예측 플랫폼 구축 + 관계사 확산",
     headline: "데이터가 쌓이면, AI가 사고를 예측한다",
     root: "데이터 분산·연계 부재 → 패턴 학습 불가(전사 구조 문제)",
-    solution: "Monitoring: 센서·설비·사고 데이터 통합 플랫폼\nMethod: 시뮬레이션으로 사고 케이스 확장 → 예측 모델",
+    solution: "Material: 센서·설비·사고 데이터 통합 플랫폼\nMethod: 시뮬레이션으로 사고 케이스 확장 → 예측 모델",
     type: "플랫폼 + AI",
     roi: "중", urgency: "하",
     period: "6~24개월",
@@ -263,6 +263,7 @@ const colorMap = {
 };
 
 const STAGES = [
+  { key: "profile", label: "자기소개", icon: FileText },
   { key: "intro", label: "소개", icon: Home },
   { key: "data", label: "데이터 분석", icon: Database },
   { key: "issue", label: "위험 인사이트", icon: AlertTriangle },
@@ -276,6 +277,7 @@ const STAGES = [
 const APP_URL = "https://sabessito.github.io/ehs-demo/";
 const ARCH_URL = "https://sabessito.github.io/ehs-demo/docs/data_architecture.html";
 const REAL_URL = "https://sabessito.github.io/ehs-demo/docs/real_data.html";
+const PROFILE_URL = "https://sabessito.github.io/ehs-demo/docs/intro_samsung.html";
 
 // 통합 데이터셋의 전체 속성(요약 셋) — SourceBadge에서 "이 중 음영만 반영" 표현에 사용
 const ATTR_ALL = [
@@ -762,6 +764,118 @@ function FlowStep({ n, label, icon: Icon, last }) {
   );
 }
 
+function ProfileStage() {
+  const card = { background: "#fff", border: `1px solid ${COLORS.line}`, borderRadius: 12, padding: "12px 14px" };
+  const stepBadge = (bg) => ({ display: "inline-block", fontSize: 11, fontWeight: 800, color: "#fff",
+    background: bg, borderRadius: 14, padding: "3px 11px", marginBottom: 6 });
+  return (
+    <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Cover */}
+      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "18px 16px", color: "#fff" }}>
+        <div style={{ fontSize: 10.5, letterSpacing: 1.5, fontWeight: 800, color: "#9FCBB8" }}>
+          SAMSUNG · 자기소개서
+        </div>
+        <div style={{ fontSize: 12, color: "#CFE9DE", margin: "8px 0 12px", lineHeight: 1.5 }}>
+          EHS 스마트안전기술 기획 직무 지원 · 지원자 하영우
+        </div>
+        <div style={{ fontSize: 21, fontWeight: 800, lineHeight: 1.35, letterSpacing: -0.4 }}>
+          Biz.부터 Data까지,<br />제조 안전을 실행하는 전략 기획자
+        </div>
+        <div style={{ fontSize: 13, color: "#9FCBB8", fontWeight: 700, marginTop: 12, lineHeight: 1.6 }}>
+          데이터로 진단하고, 전략을 세우고, 관계사 구축까지 잇습니다
+        </div>
+        <div style={{ fontSize: 12, color: "#CFE9DE", marginTop: 8, fontStyle: "italic", lineHeight: 1.6 }}>
+          "중대재해 0" — 데이터가 가리키는 위험을 사고 전에 막는다
+        </div>
+      </div>
+
+      {/* 1. 왜 저인가 */}
+      <Card>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+          <span style={{ width: 26, height: 26, borderRadius: 8, background: COLORS.teal, color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>1</span>
+          <span style={{ fontSize: 15, fontWeight: 800 }}>왜 저인가 — Biz.부터 Data까지</span>
+        </div>
+        <p style={{ fontSize: 12.5, color: "#3A3933", lineHeight: 1.6, margin: "0 0 10px" }}>
+          가장 밑바닥 <b>데이터</b>부터 <b>전략 기획</b>까지 모두 경험했기에, 실질적 가치를 만드는
+          안전기술 기획을 수행할 수 있습니다.
+        </p>
+        <div style={{ ...card, marginBottom: 8 }}>
+          <span style={stepBadge(COLORS.blue)}>STEP 1 · 현장 · Data</span>
+          <div style={{ fontSize: 13.5, fontWeight: 700 }}>SK하이닉스 — 공정 엔지니어 · Data Engineer</div>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
+            제조 시스템의 밑바닥 데이터부터 운영 프로세스까지 이해. 현업 관점에서 데이터를
+            분석·구조화해 생산성·품질·비용을 개선.
+          </div>
+        </div>
+        <div style={card}>
+          <span style={stepBadge(COLORS.navy)}>STEP 2 · 전략 · 기획</span>
+          <div style={{ fontSize: 13.5, fontWeight: 700 }}>Kearney — Strategy Consultant</div>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
+            배터리 Top 기업 Smart Factory 전략 수립·PI, 전선 제조기업 5년 디지털 전환
+            전략을 수립·이행.
+          </div>
+        </div>
+      </Card>
+
+      {/* 2. 3대 강점 */}
+      <Card>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+          <span style={{ width: 26, height: 26, borderRadius: 8, background: COLORS.teal, color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>2</span>
+          <span style={{ fontSize: 15, fontWeight: 800 }}>3대 핵심 강점</span>
+        </div>
+        {[
+          ["① Python 데이터 분석", "현업 문제를 정량 판단 → 신규 프로젝트 발굴·기획", "→ Pain Point를 '숫자'로 증명"],
+          ["② C-level 보고·기획·운영", "C-level 보고서 작성 + 프로젝트 기획·운영", "→ 전략을 '실행'으로 연결"],
+          ["③ 신기술 적용 기획", "신기술의 자사 적용 가능성 분석·기획", "→ AI·스마트안전 선제 검토"],
+        ].map(([t, d, arrow], i) => (
+          <div key={i} style={{ padding: "8px 0", borderTop: i ? `1px solid ${COLORS.line}` : "none" }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{t}</div>
+            <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2, lineHeight: 1.5 }}>{d}</div>
+            <div style={{ fontSize: 11.5, color: COLORS.teal, fontWeight: 700, marginTop: 3 }}>{arrow}</div>
+          </div>
+        ))}
+      </Card>
+
+      {/* 3. 프로젝트 */}
+      <Card>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+          <span style={{ width: 26, height: 26, borderRadius: 8, background: COLORS.teal, color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>3</span>
+          <span style={{ fontSize: 15, fontWeight: 800 }}>대표 프로젝트</span>
+        </div>
+        <div style={{ ...card, marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>Project 1 · 전선 스마트제조 MP·PI <span style={{ color: COLORS.textMuted, fontWeight: 500 }}>(1년·품질 PL)</span></div>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
+            Two-Way(Top-Down·Bottom-Up)로 미래 이미지를 설계하고 '투자→PI→구축'까지 직접 이행.
+          </div>
+        </div>
+        <div style={card}>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>Project 2 · 배터리 Top Smart Factory <span style={{ color: COLORS.textMuted, fontWeight: 500 }}>(컨설턴트·3인)</span></div>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>
+            방향성 부재 피로감을 '전사 공통 To-Be + 조망 아키텍처'로 해소. 전략 3개월 + PI 9개월로 구축 기여.
+          </div>
+        </div>
+      </Card>
+
+      {/* 4. 다짐 */}
+      <div style={{ background: COLORS.navy, borderRadius: 16, padding: "16px", color: "#fff" }}>
+        <div style={{ fontSize: 11, color: "#9FCBB8", fontWeight: 800, marginBottom: 8 }}>4 · 적합성 & 다짐</div>
+        <div style={{ fontSize: 12.5, lineHeight: 1.8 }}>
+          <div><b style={{ color: "#9FCBB8" }}>경험</b> · Two-Way(Top-Down·Bottom-Up) 도출</div>
+          <div><b style={{ color: "#9FCBB8" }}>역량</b> · C-level 보고·기획·운영</div>
+          <div><b style={{ color: "#9FCBB8" }}>연계</b> · Data → 전략 → 실제 구축 이행</div>
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginTop: 14, lineHeight: 1.6, fontStyle: "italic" }}>
+          "중대재해 0"을 향해, 데이터에서 출발해 구축까지 잇는 안전 전략을 실행하겠습니다.
+        </div>
+        <div style={{ fontSize: 12, color: "#9FCBB8", marginTop: 6 }}>— 하영우</div>
+      </div>
+    </div>
+  );
+}
+
 function IntroStage({ go }) {
   const points = [
     { icon: Database, color: "blue", title: "현황을 데이터로 진단",
@@ -1235,7 +1349,7 @@ function IssueStage({ ds }) {
       })}
       <div style={{ background: COLORS.navy, borderRadius: 12, padding: "12px 14px", color: "#EAF3EF",
         fontSize: 12, lineHeight: 1.7 }}>
-        <b style={{ color: "#9FCBB8" }}>→ 다음 탭</b>에서 이 이슈들을 4M Framework으로
+        <b style={{ color: "#9FCBB8" }}>→ 다음 탭</b>에서 이 이슈들을 4M(Man·Machine·Material·Method) Framework으로
         근본원인을 규명하고 해결 방안을 도출합니다.
       </div>
     </div>
@@ -1357,15 +1471,15 @@ function InitiativeStage() {
   const m4 = [
     { m: "Man", label: "사람·교육", color: "blue", desc: "교육 부족, 숙련도, 절차 미준수" },
     { m: "Machine", label: "설비·장비", color: "coral", desc: "방호 설계, 노후화, 정비 부재" },
+    { m: "Material", label: "자재·도구", color: "purple", desc: "안전 장비, 소재, 보호구 적합성" },
     { m: "Method", label: "프로세스", color: "amber", desc: "작업 표준, SOP, 관리 체계" },
-    { m: "Monitoring", label: "감지·측정", color: "purple", desc: "센서, 데이터, 이상 감지 체계" },
   ];
   return (
     <div style={{ padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
       <StageLede
         kicker="핵심 과제"
         headline="근본원인을 규명하고, 해결 유형을 고른다"
-        sub="4M(Man·Machine·Method·Monitoring)으로 원인을 분류하고 어떤 수단으로 해결할지 정합니다."
+        sub="4M(Man·Machine·Material·Method)으로 원인을 분류하고 어떤 수단으로 해결할지 정합니다."
       />
 
       {/* 4M Framework */}
@@ -2128,6 +2242,7 @@ export default function SmartSafetyApp() {
   const swipe = useSwipe(goNext, goPrev);
 
   const stages = {
+    profile: <ProfileStage />,
     intro: <IntroStage go={setStageIndex} />,
     data: <DataStage ds={ds} />,
     issue: <IssueStage ds={ds} />,
