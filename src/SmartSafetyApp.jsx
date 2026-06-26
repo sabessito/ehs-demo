@@ -548,16 +548,52 @@ function SourceBadge({ real, label, detail, sample, cols, active, rows }) {
 // 좌우 스와이프로 페이지 이동
 function useSwipe(onLeft, onRight) {
   const start = useRef(null);
+  const moves = useRef([]); // { x, t } 최근 터치 이력
+
   return {
-    onTouchStart: (e) => { start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; },
+    onTouchStart: (e) => {
+      const t = e.touches[0];
+      start.current = { x: t.clientX, y: t.clientY };
+      moves.current = [{ x: t.clientX, t: Date.now() }];
+    },
+    onTouchMove: (e) => {
+      const now = Date.now();
+      moves.current.push({ x: e.touches[0].clientX, t: now });
+      // 최근 200ms만 유지
+      const cutoff = now - 200;
+      moves.current = moves.current.filter((m) => m.t >= cutoff);
+    },
     onTouchEnd: (e) => {
       if (!start.current) return;
-      const dx = e.changedTouches[0].clientX - start.current.x;
-      const dy = e.changedTouches[0].clientY - start.current.y;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const ex = e.changedTouches[0].clientX;
+      const ey = e.changedTouches[0].clientY;
+      const dx = ex - start.current.x;
+      const dy = ey - start.current.y;
+      start.current = null;
+
+      // 수평 스와이프가 아니면 무시
+      if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy) * 1.5) {
+        moves.current = [];
+        return;
+      }
+
+      // 마지막 100ms 동안의 속도 계산
+      const now = Date.now();
+      const recent = moves.current.filter((m) => m.t >= now - 100);
+      let velocity = 0;
+      if (recent.length >= 2) {
+        const oldest = recent[0];
+        const newest = recent[recent.length - 1];
+        const dt = newest.t - oldest.t;
+        if (dt > 0) velocity = Math.abs(newest.x - oldest.x) / dt; // px/ms
+      }
+      moves.current = [];
+
+      // 0.3 px/ms(≈300px/s) 이상 속도 유지 시에만 탭 전환
+      // 느려지면서 멈춘 경우(스크롤 의도) → 무시
+      if (velocity >= 0.3) {
         if (dx < 0) onLeft(); else onRight();
       }
-      start.current = null;
     },
   };
 }
